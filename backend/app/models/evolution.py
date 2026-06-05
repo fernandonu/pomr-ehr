@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
@@ -13,7 +12,7 @@ class ClinicalEvolution(Base):
     autor_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     fecha = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     texto_clinico = Column(Text, nullable=False)
-    estructurado = Column(JSONB, nullable=True)
+    estructurado = Column(JSON, nullable=True)
     
     patient = relationship("Patient", back_populates="evolutions")
     problem = relationship("Problem", back_populates="evolutions")
