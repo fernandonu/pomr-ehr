@@ -1,0 +1,22 @@
+# Entornos virtuales Python
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+build/
+.npm/
+
+# IDEs
+.idea/
+.vscode/
+
+# Configuración y logs
+*.log
+.env
+
+# Docker (si se requiere)
+# !docker-compose.yml 
