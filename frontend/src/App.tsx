@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './store/authStore';
 import Dashboard from './pages/Dashboard';
 import ClinicalWorkspace from './pages/ClinicalWorkspace';
+import Login from './pages/Login';
+import UsersManager from './pages/UsersManager';
 
 const queryClient = new QueryClient();
 
@@ -27,12 +29,18 @@ const theme = createTheme({
   },
 });
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  // Bypass auth for now to allow development flow
-  // if (!isAuthenticated) {
-  //   return <Navigate to="/login" />;
-  // }
+  const role = useAuthStore((state) => state.role);
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (allowedRoles && role && role !== 'superadmin' && !allowedRoles.includes(role)) {
+    return <Navigate to="/" />;
+  }
+  
   return children;
 };
 
@@ -43,12 +51,20 @@ function App() {
         <CssBaseline />
         <Router>
           <Routes>
-            {/* <Route path="/login" element={<Login />} /> */}
+            <Route path="/login" element={<Login />} />
             <Route
               path="/"
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <UsersManager />
                 </ProtectedRoute>
               }
             />

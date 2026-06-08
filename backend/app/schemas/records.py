@@ -5,6 +5,7 @@ from datetime import date, datetime
 class VaccineBase(BaseModel):
     paciente_id: int
     snomed_concept_id: str
+    descripcion: Optional[str] = None
     fecha: date
     lote: Optional[str] = None
     observaciones: Optional[str] = None
@@ -21,6 +22,7 @@ class VaccineResponse(VaccineBase):
 class AllergyBase(BaseModel):
     paciente_id: int
     snomed_concept_id: str
+    descripcion: Optional[str] = None
     severidad: Optional[str] = None
     reaccion: Optional[str] = None
     estado: str
@@ -37,6 +39,7 @@ class AllergyResponse(AllergyBase):
 class ProcedureBase(BaseModel):
     paciente_id: int
     snomed_concept_id: str
+    descripcion: Optional[str] = None
     fecha: date
     observaciones: Optional[str] = None
 
@@ -52,6 +55,7 @@ class ProcedureResponse(ProcedureBase):
 class MedicationBase(BaseModel):
     paciente_id: int
     snomed_concept_id: str
+    descripcion: Optional[str] = None
     dosis: Optional[str] = None
     frecuencia: Optional[str] = None
     via: Optional[str] = None
@@ -71,6 +75,7 @@ class MedicationResponse(MedicationBase):
 class LabResultBase(BaseModel):
     paciente_id: int
     snomed_concept_id: str
+    descripcion: Optional[str] = None
     fecha: date
     resultado: str
     unidad: Optional[str] = None

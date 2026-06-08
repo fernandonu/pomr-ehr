@@ -10,6 +10,7 @@ from pydantic import BaseModel
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: str
 
 router = APIRouter()
 
@@ -31,4 +32,5 @@ async def login_access_token(
     return {
         "access_token": security.create_access_token(user.id),
         "token_type": "bearer",
+        "role": user.role,
     }

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  Box, Typography, Container, Paper, TextField, Button, 
+import {
+  Box, Typography, Container, Paper, TextField, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, AppBar, Toolbar
+  IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 interface Patient {
   id: number;
@@ -22,7 +23,19 @@ interface Patient {
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    nombre: '',
+    apellido: '',
+    documento: '',
+    fecha_nacimiento: '',
+    sexo: ''
+  });
+
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { role, logout } = useAuthStore();
+  const canCreatePatient = role === 'superadmin' || role === 'administrativo';
 
   // Fetch patients
   const { data: patients, isLoading } = useQuery({
@@ -33,7 +46,32 @@ const Dashboard = () => {
     }
   });
 
-  const filteredPatients = patients?.filter(p => 
+  const createPatientMutation = useMutation({
+    mutationFn: async (patient: Omit<Patient, 'id'>) => {
+      const res = await api.post('/patients/', patient);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      setIsDialogOpen(false);
+      setNewPatient({ nombre: '', apellido: '', documento: '', fecha_nacimiento: '', sexo: '' });
+    },
+    onError: (error: any) => {
+      console.error(error);
+      const detail = error.response?.data?.detail;
+      alert(`Error al guardar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || error.message}`);
+    }
+  });
+
+  const handleCreatePatient = () => {
+    if (!newPatient.nombre || !newPatient.apellido || !newPatient.documento || !newPatient.fecha_nacimiento || !newPatient.sexo) {
+      alert("Por favor completa todos los campos requeridos.");
+      return;
+    }
+    createPatientMutation.mutate(newPatient);
+  };
+
+  const filteredPatients = patients?.filter(p =>
     p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.documento.includes(searchTerm)
@@ -46,7 +84,12 @@ const Dashboard = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             POMR EHR
           </Typography>
-          <Button color="inherit">Logout</Button>
+          {role === 'superadmin' && (
+            <Button color="inherit" onClick={() => navigate('/users')} sx={{ mr: 2 }}>
+              Gestión de Usuarios
+            </Button>
+          )}
+          <Button color="inherit" onClick={() => { logout(); navigate('/login'); }}>Logout</Button>
         </Toolbar>
       </AppBar>
 
@@ -55,14 +98,17 @@ const Dashboard = () => {
           <Typography variant="h4" fontWeight="bold" color="text.primary">
             Pacientes
           </Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            startIcon={<PersonAddIcon />}
-            disableElevation
-          >
-            Nuevo Paciente
-          </Button>
+          {canCreatePatient && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PersonAddIcon />}
+              disableElevation
+              onClick={() => setIsDialogOpen(true)}
+            >
+              Nuevo Paciente
+            </Button>
+          )}
         </Box>
 
         <Paper sx={{ p: 2, mb: 3, display: 'flex', alignItems: 'center' }} elevation={1}>
@@ -106,8 +152,8 @@ const Dashboard = () => {
                     <TableCell>{row.fecha_nacimiento}</TableCell>
                     <TableCell>{row.sexo}</TableCell>
                     <TableCell align="right">
-                      <IconButton 
-                        color="primary" 
+                      <IconButton
+                        color="primary"
                         aria-label="ver historia clinica"
                         onClick={() => navigate(`/patient/${row.id}`)}
                       >
@@ -121,6 +167,71 @@ const Dashboard = () => {
           </Table>
         </TableContainer>
       </Container>
+
+      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Nuevo Paciente</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Nombre"
+                value={newPatient.nombre}
+                onChange={(e) => setNewPatient({ ...newPatient, nombre: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Apellido"
+                value={newPatient.apellido}
+                onChange={(e) => setNewPatient({ ...newPatient, apellido: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Documento"
+                value={newPatient.documento}
+                onChange={(e) => setNewPatient({ ...newPatient, documento: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Fecha de Nacimiento"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={newPatient.fecha_nacimiento}
+                onChange={(e) => setNewPatient({ ...newPatient, fecha_nacimiento: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Sexo"
+                value={newPatient.sexo}
+                onChange={(e) => setNewPatient({ ...newPatient, sexo: e.target.value })}
+              >
+                <MenuItem value="M">Masculino</MenuItem>
+                <MenuItem value="F">Femenino</MenuItem>
+                <MenuItem value="X">Otro</MenuItem>
+              </TextField>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreatePatient}
+            disabled={createPatientMutation.isPending}
+          >
+            {createPatientMutation.isPending ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

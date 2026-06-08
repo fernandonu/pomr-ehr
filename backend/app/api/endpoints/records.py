@@ -11,29 +11,33 @@ from app.schemas.records import (
     LabResultCreate, LabResultResponse
 )
 
+from app.api.deps import RequireRole, get_current_active_user
+from app.models.user import User
+
 router = APIRouter()
+require_sanitario = RequireRole(["equipo_sanitario"])
 
 @router.get("/patient/{paciente_id}")
-async def list_patient_records(paciente_id: int, db: AsyncSession = Depends(get_db)):
+async def list_patient_records(paciente_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Returns all clinical records for a patient in a unified response."""
     return await records_service.get_patient_records(db, paciente_id)
 
 @router.post("/vaccine", response_model=VaccineResponse)
-async def create_vaccine(item: VaccineCreate, db: AsyncSession = Depends(get_db)):
+async def create_vaccine(item: VaccineCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_sanitario)):
     return await records_service.create_vaccine(db, item)
 
 @router.post("/allergy", response_model=AllergyResponse)
-async def create_allergy(item: AllergyCreate, db: AsyncSession = Depends(get_db)):
+async def create_allergy(item: AllergyCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_sanitario)):
     return await records_service.create_allergy(db, item)
 
 @router.post("/procedure", response_model=ProcedureResponse)
-async def create_procedure(item: ProcedureCreate, db: AsyncSession = Depends(get_db)):
+async def create_procedure(item: ProcedureCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_sanitario)):
     return await records_service.create_procedure(db, item)
 
 @router.post("/medication", response_model=MedicationResponse)
-async def create_medication(item: MedicationCreate, db: AsyncSession = Depends(get_db)):
+async def create_medication(item: MedicationCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_sanitario)):
     return await records_service.create_medication(db, item)
 
 @router.post("/lab_result", response_model=LabResultResponse)
-async def create_lab_result(item: LabResultCreate, db: AsyncSession = Depends(get_db)):
+async def create_lab_result(item: LabResultCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_sanitario)):
     return await records_service.create_lab_result(db, item)
