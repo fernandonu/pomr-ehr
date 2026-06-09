@@ -8,6 +8,7 @@ from app.models.patient import Patient
 from app.models.api_log import ApiLog
 
 NODO_BASE_URL = os.getenv("NODO_BASE_URL", "https://ipsgarrahan.fgnu.ar")
+URL_ALTA_ABM_DOMINIO = os.getenv("URL_ALTA_ABM_DOMINIO", "https://sigep.saludtdf.gob.ar/")
 
 async def log_api_call(db: AsyncSession, patient_id: int, endpoint: str, method: str, req_payload: dict, res_payload: dict, status_code: int):
     log = ApiLog(
@@ -72,7 +73,7 @@ async def federate_patient(patient_id: int, db: AsyncSession):
                 },
                 {
                     "use": "usual",
-                    "system": NODO_BASE_URL,
+                    "system": URL_ALTA_ABM_DOMINIO,
                     "value": str(patient.id)
                 }
             ],
