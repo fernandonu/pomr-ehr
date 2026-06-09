@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Container, Paper, Select, MenuItem, InputLabel, FormControl, Table, TableBody, TableCell, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Chip } from '@mui/material';
+import { Box, Button, TextField, Typography, Container, Paper, Select, MenuItem, InputLabel, FormControl, Table, TableBody, TableCell, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Chip, AppBar, Toolbar } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 
 export default function UsersManager() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -55,9 +57,19 @@ export default function UsersManager() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" fontWeight="bold">Gestión de Usuarios</Typography>
+    <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <AppBar position="static" elevation={0} color="primary">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            Historia Clínica Electrónica
+          </Typography>
+          <Button color="inherit" onClick={() => navigate('/')}>Listado de pacientes</Button>
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" fontWeight="bold">Gestión de Usuarios</Typography>
         <Button variant="contained" onClick={() => setOpen(true)}>+ Nuevo Usuario</Button>
       </Box>
 
@@ -103,7 +115,7 @@ export default function UsersManager() {
       </Paper>
 
       {/* Dialog for New User */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Crear Nuevo Usuario</DialogTitle>
         <DialogContent>
           <TextField fullWidth label="Username" margin="normal" value={username} onChange={e => setUsername(e.target.value)} />
@@ -134,6 +146,7 @@ export default function UsersManager() {
           <Button variant="contained" onClick={handlePasswordChange} disabled={!password}>Guardar</Button>
         </DialogActions>
       </Dialog>
-    </Container>
+      </Container>
+    </Box>
   );
 }

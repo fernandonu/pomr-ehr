@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { SnomedAutocomplete } from '../SnomedAutocomplete';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -41,11 +42,15 @@ export const AllergiesTab = ({ patientId, allergies = [] }: { patientId: string,
         </List>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>Nueva Alergia</DialogTitle>
         <DialogContent>
-           <TextField autoFocus margin="dense" label="Código SNOMED o Concept ID" fullWidth value={formData.snomed_concept_id} onChange={e => setFormData({...formData, snomed_concept_id: e.target.value})} />
-           <TextField margin="dense" label="Descripción (Ej. Penicilina)" fullWidth value={formData.descripcion} onChange={e => setFormData({...formData, descripcion: e.target.value})} />
+           <SnomedAutocomplete 
+              label="Buscar Alergia (SNOMED CT)"
+              selectedConceptId={formData.snomed_concept_id}
+              selectedTerm={formData.descripcion}
+              onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
+           />
            <TextField margin="dense" label="Severidad" fullWidth value={formData.severidad} onChange={e => setFormData({...formData, severidad: e.target.value})} />
            <TextField margin="dense" label="Reacción" fullWidth value={formData.reaccion} onChange={e => setFormData({...formData, reaccion: e.target.value})} />
         </DialogContent>

@@ -121,3 +121,30 @@ erDiagram
 ### Fase 5: Entrega y DevOps
 - Producción y estandarización del código con Dockerfiles.
 - Redacción del README y creación del Workflow de Integración Continua (CI).
+
+
+Acceso a DB postgresql://pomr_user:[EMAIL_ADDRESS]:5432/pomr_db
+
+CREATE DATABASE pomr_db;
+CREATE USER pomr_user WITH ENCRYPTED PASSWORD 'pomr_password';
+GRANT ALL PRIVILEGES ON DATABASE pomr_db TO pomr_user;
+ALTER DATABASE pomr_db OWNER TO pomr_user;
+
+
+Inicio Backend
+cd C:\sistemas\pomr-ehr\backend
+.\venv\Scripts\uvicorn app.main:app --reload
+
+http://127.0.0.1:8000/
+http://127.0.0.1:8000/docs
+http://127.0.0.1:8000/redoc
+
+Inicio Frontend
+cd C:\sistemas\pomr-ehr\frontend
+npm run dev
+
+http://localhost:5173/
+Usuario: admin
+Contraseña: admin123 
+
+

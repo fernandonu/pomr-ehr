@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { SnomedAutocomplete } from '../SnomedAutocomplete';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 
@@ -38,11 +39,15 @@ export const LabsTab = ({ patientId, labs = [] }: { patientId: string, labs?: an
         </List>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>Añadir Resultado de Laboratorio</DialogTitle>
         <DialogContent>
-           <TextField autoFocus margin="dense" label="Código SNOMED o Concept ID" fullWidth value={formData.snomed_concept_id} onChange={e => setFormData({...formData, snomed_concept_id: e.target.value})} />
-           <TextField margin="dense" label="Descripción (Ej. Hemograma completo)" fullWidth value={formData.descripcion} onChange={e => setFormData({...formData, descripcion: e.target.value})} />
+           <SnomedAutocomplete 
+              label="Buscar Examen de Laboratorio (SNOMED CT)"
+              selectedConceptId={formData.snomed_concept_id}
+              selectedTerm={formData.descripcion}
+              onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
+           />
            <TextField margin="dense" label="Fecha" type="date" fullWidth value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} InputLabelProps={{ shrink: true }} />
            <TextField margin="dense" label="Resultado" fullWidth value={formData.resultado} onChange={e => setFormData({...formData, resultado: e.target.value})} />
            <TextField margin="dense" label="Unidad" fullWidth value={formData.unidad} onChange={e => setFormData({...formData, unidad: e.target.value})} />

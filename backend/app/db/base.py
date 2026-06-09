@@ -7,3 +7,4 @@ from app.models.patient import Patient
 from app.models.problem import Problem
 from app.models.evolution import ClinicalEvolution
 from app.models.records import Vaccine, Allergy, Procedure, Medication, LabResult
+from app.models.api_log import ApiLog

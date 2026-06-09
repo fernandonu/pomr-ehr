@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import ClinicalWorkspace from './pages/ClinicalWorkspace';
 import Login from './pages/Login';
 import UsersManager from './pages/UsersManager';
+import ApiLogs from './pages/ApiLogs';
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
                   <UsersManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/api-logs"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <ApiLogs />
                 </ProtectedRoute>
               }
             />

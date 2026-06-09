@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        return "sqlite+aiosqlite:///./pomr.db"
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     SECRET_KEY: str = "CHANGEME_IN_PRODUCTION"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8

@@ -9,9 +9,11 @@ class Patient(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
     apellido = Column(String, nullable=False)
+    apellido_materno = Column(String, nullable=True)
     documento = Column(String, unique=True, index=True, nullable=False)
     fecha_nacimiento = Column(Date, nullable=False)
     sexo = Column(String, nullable=False)
+    telefono = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     problems = relationship("Problem", back_populates="patient", cascade="all, delete-orphan")

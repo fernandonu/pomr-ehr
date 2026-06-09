@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { 
   Box, Typography, Paper, Divider, List, ListItem, ListItemText, ListItemButton,
   AppBar, Toolbar, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Tabs, Tab, IconButton
+  Tabs, Tab, IconButton, CircularProgress
 } from '@mui/material';
+import { SnomedAutocomplete } from '../components/SnomedAutocomplete';
 import EditIcon from '@mui/icons-material/Edit';
 import { AllergiesTab } from '../components/records/AllergiesTab';
 import { MedicationsTab } from '../components/records/MedicationsTab';
@@ -14,6 +15,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const ClinicalWorkspace = () => {
   const { patientId } = useParams<{ patientId: string }>();
@@ -26,7 +28,6 @@ const ClinicalWorkspace = () => {
   const [openAddProblem, setOpenAddProblem] = useState(false);
   const [newProblemDesc, setNewProblemDesc] = useState('');
   const [newProblemCode, setNewProblemCode] = useState('');
-  
   const [openAddEvol, setOpenAddEvol] = useState(false);
   const [openEditEvol, setOpenEditEvol] = useState(false);
   const [editEvolId, setEditEvolId] = useState<number | null>(null);
@@ -35,6 +36,22 @@ const ClinicalWorkspace = () => {
   const [newEvolText, setNewEvolText] = useState('');
   const [newEvolVitals, setNewEvolVitals] = useState({ peso_kg: '', talla_cm: '', perimetro_cefalico_cm: '', tension_arterial: '' });
   const [currentTab, setCurrentTab] = useState(0);
+
+  const calculateAge = (dob: string) => {
+    if (!dob) return '';
+    const diffMs = Date.now() - new Date(dob).getTime();
+    const ageDt = new Date(diffMs);
+    return Math.abs(ageDt.getUTCFullYear() - 1970);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateString;
+  };
 
   // Fetch Clinical Records (Allergies, Meds, etc)
   const { data: records } = useQuery({
@@ -101,6 +118,16 @@ const ClinicalWorkspace = () => {
     }
   });
 
+  const updateProblemStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      return await api.put(`/problems/${selectedProblem}/status?status=${status}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['problems', patientId] });
+      setSelectedProblem(null);
+    }
+  });
+
   const handleOpenEdit = (evo: any) => {
     setEditEvolId(evo.id);
     setNewEvolText(evo.texto_clinico);
@@ -143,30 +170,43 @@ const ClinicalWorkspace = () => {
       <AppBar position="static" elevation={0} color="primary">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            POMR EHR - Historia Clínica
+            Historia Clínica Electrónica
           </Typography>
-          <Button color="inherit" onClick={() => navigate('/')}>Volver al Dashboard</Button>
+          <Button color="inherit" onClick={() => navigate('/')}>Listado de pacientes</Button>
         </Toolbar>
       </AppBar>
 
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {/* Left Panel: Context & Problems */}
-        <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider', bgcolor: 'background.paper', overflowY: 'auto' }}>
-          <Box p={2}>
-            <Typography variant="h6" fontWeight="bold">
+        <Box sx={{ width: 360, borderRight: 1, borderColor: 'divider', bgcolor: 'background.paper', overflowY: 'auto' }}>
+          <Box p={3} textAlign="center" sx={{ bgcolor: '#f8fafc' }}>
+            <Typography variant="h5" fontWeight="bold" color="primary.main">
               {patient?.apellido}, {patient?.nombre}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" mt={1}>
               DNI: {patient?.documento} | Sexo: {patient?.sexo}
             </Typography>
+            {patient?.fecha_nacimiento && (
+              <Typography variant="body2" color="text.secondary">
+                Fecha Nac.: {formatDate(patient.fecha_nacimiento)} ({calculateAge(patient.fecha_nacimiento)} años)
+              </Typography>
+            )}
           </Box>
           <Divider />
 
           <Box p={2}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="subtitle1" fontWeight="bold">Problemas Activos</Typography>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="subtitle1" fontWeight="bold" color="primary.dark">Problemas Activos</Typography>
               {canEditClinic && (
-                <Button size="small" variant="text" onClick={() => setOpenAddProblem(true)}>+ Añadir</Button>
+                <Button 
+                  size="small" 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={() => setOpenAddProblem(true)}
+                  sx={{ borderRadius: 6, textTransform: 'none', fontWeight: 'bold', boxShadow: 2 }}
+                >
+                  + Añadir Problema
+                </Button>
               )}
             </Box>
             <List disablePadding>
@@ -175,9 +215,20 @@ const ClinicalWorkspace = () => {
                   <ListItemButton 
                     selected={selectedProblem === p.id}
                     onClick={() => setSelectedProblem(p.id)}
-                    sx={{ borderRadius: 1, mb: 0.5 }}
+                    sx={{ 
+                      borderRadius: 2, 
+                      mb: 1,
+                      borderLeft: 4,
+                      borderColor: 'primary.main',
+                      bgcolor: selectedProblem === p.id ? 'action.selected' : 'background.paper',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      '&.Mui-selected': { bgcolor: 'primary.light', color: 'primary.contrastText' }
+                    }}
                   >
-                    <ListItemText primary={p.description} />
+                    <ListItemText 
+                      primary={p.description} 
+                      primaryTypographyProps={{ fontWeight: selectedProblem === p.id ? 'bold' : 'medium' }}
+                    />
                   </ListItemButton>
                 </ListItem>
               ))}
@@ -188,17 +239,28 @@ const ClinicalWorkspace = () => {
           </Box>
 
           <Divider />
-          <Box p={2}>
-            <Typography variant="subtitle1" fontWeight="bold" mb={1}>Problemas Inactivos</Typography>
+          <Box p={2} sx={{ bgcolor: '#fafafa' }}>
+            <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" mb={2}>Problemas Inactivos</Typography>
             <List disablePadding>
               {inactiveProblems.map((p: any) => (
                 <ListItem key={p.id} disablePadding>
                   <ListItemButton 
                     selected={selectedProblem === p.id}
                     onClick={() => setSelectedProblem(p.id)}
-                    sx={{ borderRadius: 1, mb: 0.5, opacity: 0.7 }}
+                    sx={{ 
+                      borderRadius: 2, 
+                      mb: 1, 
+                      opacity: 0.8,
+                      borderLeft: 4,
+                      borderColor: 'grey.400',
+                      bgcolor: 'background.paper',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}
                   >
-                    <ListItemText primary={p.description} />
+                    <ListItemText 
+                      primary={p.description} 
+                      primaryTypographyProps={{ color: 'text.secondary' }}
+                    />
                   </ListItemButton>
                 </ListItem>
               ))}
@@ -210,7 +272,7 @@ const ClinicalWorkspace = () => {
         <Box sx={{ flexGrow: 1, bgcolor: '#f4f6f8', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3, pt: 2 }}>
             <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)} variant="scrollable" scrollButtons="auto">
-              <Tab label="POMR (Problemas)" />
+              <Tab label="Problemas" />
               <Tab label="Alergias" />
               <Tab label="Medicación" />
               <Tab label="Vacunas" />
@@ -224,14 +286,33 @@ const ClinicalWorkspace = () => {
           {selectedProblem ? (
             <>
               <Paper sx={{ p: 3, mb: 3 }} elevation={1}>
-                <Typography variant="h5" fontWeight="bold" mb={1}>
-                  {problems?.find((p: any) => p.id === selectedProblem)?.description}
-                </Typography>
-                <Chip 
-                  label={problems?.find((p: any) => p.id === selectedProblem)?.estado.toUpperCase()} 
-                  color={problems?.find((p: any) => p.id === selectedProblem)?.estado === 'activo' ? 'primary' : 'default'}
-                  size="small"
-                />
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography variant="h5" fontWeight="bold" mb={1}>
+                      {problems?.find((p: any) => p.id === selectedProblem)?.description}
+                    </Typography>
+                    <Chip 
+                      label={problems?.find((p: any) => p.id === selectedProblem)?.estado.toUpperCase()} 
+                      color={problems?.find((p: any) => p.id === selectedProblem)?.estado === 'activo' ? 'primary' : 'default'}
+                      size="small"
+                    />
+                  </Box>
+                  {canEditClinic && problems?.find((p: any) => p.id === selectedProblem)?.estado === 'activo' && (
+                    <Button 
+                      variant="outlined" 
+                      color="warning" 
+                      size="small"
+                      onClick={() => {
+                        if(window.confirm('¿Estás seguro de pasar este problema a inactivo?')) {
+                          updateProblemStatusMutation.mutate('inactivo');
+                        }
+                      }}
+                      disabled={updateProblemStatusMutation.isPending}
+                    >
+                      Pasar a inactivo
+                    </Button>
+                  )}
+                </Box>
               </Paper>
 
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -298,23 +379,18 @@ const ClinicalWorkspace = () => {
       </Box>
 
       {/* Add Problem Dialog */}
-      <Dialog open={openAddProblem} onClose={() => setOpenAddProblem(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Añadir Problema Activo</DialogTitle>
-        <DialogContent>
-          <TextField 
-            autoFocus
-            margin="dense"
-            label="Código (SNOMED u otro)"
-            fullWidth
-            value={newProblemCode}
-            onChange={(e) => setNewProblemCode(e.target.value)}
-          />
-          <TextField 
-            margin="dense"
-            label="Descripción del problema"
-            fullWidth
-            value={newProblemDesc}
-            onChange={(e) => setNewProblemDesc(e.target.value)}
+      <ErrorBoundary>
+        <Dialog open={openAddProblem} onClose={() => setOpenAddProblem(false)} fullWidth maxWidth="md">
+          <DialogTitle>Añadir Problema Activo</DialogTitle>
+          <DialogContent>
+          <SnomedAutocomplete
+            label="Descripción del problema (Busca en SNOMED CT...)"
+            selectedConceptId={newProblemCode}
+            selectedTerm={newProblemDesc}
+            onSelect={(conceptId, term) => {
+              setNewProblemCode(conceptId);
+              setNewProblemDesc(term);
+            }}
           />
         </DialogContent>
         <DialogActions>
@@ -326,11 +402,12 @@ const ClinicalWorkspace = () => {
           >
             Guardar
           </Button>
-        </DialogActions>
-      </Dialog>
+          </DialogActions>
+        </Dialog>
+      </ErrorBoundary>
 
       {/* Add Evolution Dialog */}
-      <Dialog open={openAddEvol} onClose={() => setOpenAddEvol(false)} fullWidth maxWidth="sm">
+      <Dialog open={openAddEvol} onClose={() => setOpenAddEvol(false)} fullWidth maxWidth="md">
         <DialogTitle>Nueva Evolución Clínica</DialogTitle>
         <DialogContent>
           <Box display="flex" gap={2} mb={2} mt={1}>
@@ -363,7 +440,7 @@ const ClinicalWorkspace = () => {
       </Dialog>
 
       {/* Edit Evolution Dialog */}
-      <Dialog open={openEditEvol} onClose={() => setOpenEditEvol(false)} fullWidth maxWidth="sm">
+      <Dialog open={openEditEvol} onClose={() => setOpenEditEvol(false)} fullWidth maxWidth="md">
         <DialogTitle>Editar Evolución Clínica</DialogTitle>
         <DialogContent>
           <TextField 

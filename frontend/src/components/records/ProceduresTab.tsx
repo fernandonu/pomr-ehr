@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { SnomedAutocomplete } from '../SnomedAutocomplete';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 
@@ -38,11 +39,15 @@ export const ProceduresTab = ({ patientId, procedures = [] }: { patientId: strin
         </List>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>Registrar Procedimiento</DialogTitle>
         <DialogContent>
-           <TextField autoFocus margin="dense" label="Código SNOMED o Concept ID" fullWidth value={formData.snomed_concept_id} onChange={e => setFormData({...formData, snomed_concept_id: e.target.value})} />
-           <TextField margin="dense" label="Descripción (Ej. Apendicectomía)" fullWidth value={formData.descripcion} onChange={e => setFormData({...formData, descripcion: e.target.value})} />
+           <SnomedAutocomplete 
+              label="Buscar Procedimiento (SNOMED CT)"
+              selectedConceptId={formData.snomed_concept_id}
+              selectedTerm={formData.descripcion}
+              onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
+           />
            <TextField margin="dense" label="Fecha" type="date" fullWidth value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} InputLabelProps={{ shrink: true }} />
            <TextField margin="dense" label="Observaciones" fullWidth value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} />
         </DialogContent>

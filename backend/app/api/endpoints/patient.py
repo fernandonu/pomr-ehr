@@ -33,3 +33,14 @@ async def update_patient(patient_id: int, patient_update: PatientUpdate, db: Asy
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
+
+@router.post("/{patient_id}/federate")
+async def federate_patient_endpoint(patient_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.services.federation import federate_patient
+    try:
+        result = await federate_patient(patient_id, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al federar el paciente: {str(e)}")
