@@ -33,9 +33,9 @@ async def federate_patient(patient_id: int, current_user_id: int, db: AsyncSessi
         try:
             find_resp = await client.get(find_url, timeout=10.0)
             find_data = find_resp.json()
-            await log_api_call(db, patient_id, "/fhir/Patient (Find)", "GET", None, find_data, find_resp.status_code)
+            await log_api_call(db, patient_id, "/fhir/Patient (Find) (ITI-78)", "GET", None, find_data, find_resp.status_code)
         except Exception as e:
-            await log_api_call(db, patient_id, "/fhir/Patient (Find)", "GET", None, {"error": str(e)}, 500)
+            await log_api_call(db, patient_id, "/fhir/Patient (Find) (ITI-78)", "GET", None, {"error": str(e)}, 500)
             raise
 
         # Check if found
@@ -50,14 +50,14 @@ async def federate_patient(patient_id: int, current_user_id: int, db: AsyncSessi
                 try:
                     get_resp = await client.get(get_url, timeout=10.0)
                     get_data = get_resp.json()
-                    await log_api_call(db, patient_id, f"/fhir/Patient/{remote_id} (Get)", "GET", None, get_data, get_resp.status_code)
+                    await log_api_call(db, patient_id, f"/fhir/Patient/{remote_id} (Get) (ITI-78)", "GET", None, get_data, get_resp.status_code)
                     if get_resp.status_code == 200:
                         patient.federation_id = remote_id
                         patient.federated_by = current_user_id
                         await db.commit()
                         return {"status": "success", "message": f"El paciente ya se encuentra federado con ID: {remote_id}", "data": get_data}
                 except Exception as e:
-                    await log_api_call(db, patient_id, f"/fhir/Patient/{remote_id} (Get)", "GET", None, {"error": str(e)}, 500)
+                    await log_api_call(db, patient_id, f"/fhir/Patient/{remote_id} (Get) (ITI-78)", "GET", None, {"error": str(e)}, 500)
                     raise
 
         # Step 3: ITI-104 - Create/Update Patient (If not found)
@@ -114,7 +114,7 @@ async def federate_patient(patient_id: int, current_user_id: int, db: AsyncSessi
         try:
             create_resp = await client.post(create_url, json=fhir_payload, timeout=10.0)
             create_data = create_resp.json()
-            await log_api_call(db, patient_id, "/fhir/Patient (Create)", "POST", fhir_payload, create_data, create_resp.status_code)
+            await log_api_call(db, patient_id, "/fhir/Patient (Create) (ITI-104)", "POST", fhir_payload, create_data, create_resp.status_code)
             
             if create_resp.status_code in [200, 201]:
                 remote_id = create_data.get("id") or (create_data.get("entry") and create_data["entry"][0].get("id"))
@@ -126,5 +126,49 @@ async def federate_patient(patient_id: int, current_user_id: int, db: AsyncSessi
             else:
                 return {"status": "error", "message": "Error al federar el paciente", "data": create_data}
         except Exception as e:
-            await log_api_call(db, patient_id, "/fhir/Patient (Create)", "POST", fhir_payload, {"error": str(e)}, 500)
+            await log_api_call(db, patient_id, "/fhir/Patient (Create) (ITI-104)", "POST", fhir_payload, {"error": str(e)}, 500)
             raise
+
+async def get_patient_ips_domains(patient_id: int, current_user_id: int, db: AsyncSession):
+    result = await db.execute(select(Patient).filter(Patient.id == patient_id))
+    patient = result.scalars().first()
+    if not patient:
+        raise ValueError("Patient not found")
+
+    async with httpx.AsyncClient() as client:
+        # ITI-67 - Find Document Reference By Patient
+        doc_url = f"{settings.NODO_BASE_URL}/fhir/DocumentReference?patient.identifier=http://www.renaper.gob.ar/dni|{patient.documento}"
+        try:
+            doc_resp = await client.get(doc_url, timeout=10.0)
+            doc_data = doc_resp.json()
+            await log_api_call(db, patient_id, "/fhir/DocumentReference (ITI-67)", "GET", None, doc_data, doc_resp.status_code)
+            return doc_data
+        except Exception as e:
+            await log_api_call(db, patient_id, "/fhir/DocumentReference (ITI-67)", "GET", None, {"error": str(e)}, 500)
+            raise
+
+async def get_patient_ips_document(patient_id: int, bundle_url: str, current_user_id: int, db: AsyncSession):
+    # Validates patient exists for context
+    result = await db.execute(select(Patient).filter(Patient.id == patient_id))
+    if not result.scalars().first():
+        raise ValueError("Patient not found")
+
+    async with httpx.AsyncClient(verify=False) as client: # Using verify=False just in case internal nodes have self-signed certs
+        # ITI-68 - Get IPS Document
+        try:
+            doc_resp = await client.get(bundle_url, timeout=15.0)
+            try:
+                doc_data = doc_resp.json()
+            except ValueError:
+                # Si falla el parseo, tal vez retornó HTML/texto (ej. error 502 de proxy)
+                doc_data = {"error": "Invalid JSON response from node", "raw_content": doc_resp.text}
+                
+            await log_api_call(db, patient_id, f"{bundle_url} (ITI-68)", "GET", None, doc_data, doc_resp.status_code)
+            
+            if doc_resp.status_code != 200:
+                 return {"status": "error", "message": f"Error del nodo: {doc_resp.status_code}", "data": doc_data}
+                 
+            return doc_data
+        except Exception as e:
+            await log_api_call(db, patient_id, f"{bundle_url} (ITI-68)", "GET", None, {"error": str(e)}, 500)
+            return {"status": "error", "message": f"Error de conexión al nodo: {str(e)}", "data": None}

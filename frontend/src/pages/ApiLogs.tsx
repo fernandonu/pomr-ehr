@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Box, Typography, Container, Paper, Table, TableBody, TableCell, 
-  TableContainer, TableHead, TableRow, AppBar, Toolbar, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, IconButton
+  TableContainer, TableHead, TableRow, TablePagination, AppBar, Toolbar, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tabs, Tab
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,9 @@ interface ApiLog {
 const ApiLogs = () => {
   const navigate = useNavigate();
   const [selectedLog, setSelectedLog] = useState<ApiLog | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [tabIndex, setTabIndex] = useState(0);
 
   const { data: logs, isLoading } = useQuery({
     queryKey: ['api-logs'],
@@ -31,6 +34,34 @@ const ApiLogs = () => {
       return res.data;
     }
   });
+
+  const filteredLogs = React.useMemo(() => {
+    if (!logs) return [];
+    if (tabIndex === 0) return logs.filter(l => l.endpoint.includes('(ITI-68)'));
+    if (tabIndex === 1) return logs.filter(l => l.endpoint.includes('(ITI-67)'));
+    if (tabIndex === 2) return logs.filter(l => l.endpoint.includes('(ITI-78)'));
+    if (tabIndex === 3) return logs.filter(l => l.endpoint.includes('(ITI-104)'));
+    if (tabIndex === 4) return logs.filter(l => l.endpoint.includes('(ITI-65)'));
+    if (tabIndex === 5) return logs.filter(l => 
+      !l.endpoint.includes('(ITI-68)') && 
+      !l.endpoint.includes('(ITI-67)') && 
+      !l.endpoint.includes('(ITI-78)') && 
+      !l.endpoint.includes('(ITI-104)') && 
+      !l.endpoint.includes('(ITI-65)')
+    );
+    return logs;
+  }, [logs, tabIndex]);
+
+  const paginatedLogs = filteredLogs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -48,8 +79,17 @@ const ApiLogs = () => {
           Historial de Peticiones
         </Typography>
 
-        <TableContainer component={Paper} elevation={1}>
-          <Table sx={{ minWidth: 650 }} aria-label="api logs table">
+        <Paper elevation={1} sx={{ width: '100%', overflow: 'hidden' }}>
+          <Tabs value={tabIndex} onChange={(e, v) => { setTabIndex(v); setPage(0); }} sx={{ borderBottom: 1, borderColor: 'divider' }} variant="scrollable" scrollButtons="auto">
+            <Tab label="Consultas IPS (ITI-68)" />
+            <Tab label="Búsqueda IPS (ITI-67)" />
+            <Tab label="Búsqueda Paciente (ITI-78)" />
+            <Tab label="Alta Paciente (ITI-104)" />
+            <Tab label="Envío de Doc. (ITI-65)" />
+            <Tab label="Otras Llamadas" />
+          </Tabs>
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="api logs table">
             <TableHead sx={{ backgroundColor: '#f9fafb' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
@@ -67,7 +107,7 @@ const ApiLogs = () => {
               ) : !logs || logs.length === 0 ? (
                 <TableRow><TableCell colSpan={7} align="center">No hay registros de llamadas externas.</TableCell></TableRow>
               ) : (
-                logs.map((row) => (
+                paginatedLogs.map((row) => (
                   <TableRow
                     key={row.id}
                     sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: '#f5f5f5' } }}
@@ -91,6 +131,18 @@ const ApiLogs = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[10, 25, 50]}
+          component="div"
+          count={filteredLogs.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+        />
+        </Paper>
       </Container>
 
       <Dialog open={!!selectedLog} onClose={() => setSelectedLog(null)} maxWidth="md" fullWidth>

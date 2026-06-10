@@ -11,6 +11,7 @@ import { MedicationsTab } from '../components/records/MedicationsTab';
 import { VaccinesTab } from '../components/records/VaccinesTab';
 import { LabsTab } from '../components/records/LabsTab';
 import { ProceduresTab } from '../components/records/ProceduresTab';
+import { ExternalHistoryTab } from '../components/records/ExternalHistoryTab';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
@@ -300,6 +301,7 @@ const ClinicalWorkspace = () => {
               <Tab label="Vacunas" />
               <Tab label="Laboratorio" />
               <Tab label="Procedimientos" />
+              <Tab label="Historia Clínica Externa" />
             </Tabs>
           </Box>
           <Box sx={{ p: 3, overflowY: 'auto', flexGrow: 1 }}>
@@ -411,6 +413,7 @@ const ClinicalWorkspace = () => {
             {currentTab === 3 && <VaccinesTab patientId={patientId as string} vaccines={sortRecordsDesc(records?.vaccines)} />}
             {currentTab === 4 && <LabsTab patientId={patientId as string} labs={sortRecordsDesc(records?.lab_results)} />}
             {currentTab === 5 && <ProceduresTab patientId={patientId as string} procedures={sortRecordsDesc(records?.procedures)} />}
+            {currentTab === 6 && <ExternalHistoryTab patientId={patientId as string} />}
           </Box>
         </Box>
       </Box>

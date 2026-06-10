@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Box, Typography, Container, Paper, TextField, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
   IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem,
   Snackbar, Alert, Tooltip
 } from '@mui/material';
@@ -31,6 +31,8 @@ interface Patient {
 
 const PatientList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
   const [newPatient, setNewPatient] = useState({
@@ -149,6 +151,17 @@ const PatientList = () => {
     p.documento.includes(searchTerm)
   ) || [];
 
+  const paginatedPatients = filteredPatients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const parts = dateString.split('-');
@@ -219,8 +232,9 @@ const PatientList = () => {
           />
         </Paper>
 
-        <TableContainer component={Paper} elevation={1}>
-          <Table sx={{ minWidth: 650 }} aria-label="pacientes table">
+        <Paper elevation={1} sx={{ width: '100%', overflow: 'hidden' }}>
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="pacientes table">
             <TableHead sx={{ backgroundColor: '#f9fafb' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
@@ -237,7 +251,7 @@ const PatientList = () => {
               ) : filteredPatients.length === 0 ? (
                 <TableRow><TableCell colSpan={6} align="center">No se encontraron pacientes</TableCell></TableRow>
               ) : (
-                filteredPatients.map((row) => (
+                paginatedPatients.map((row) => (
                   <TableRow
                     key={row.id}
                     sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: '#f5f5f5' } }}
@@ -300,6 +314,18 @@ const PatientList = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredPatients.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+        />
+        </Paper>
       </Container>
 
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} maxWidth="md" fullWidth>

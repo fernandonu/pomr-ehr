@@ -44,3 +44,25 @@ async def federate_patient_endpoint(patient_id: int, db: AsyncSession = Depends(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al federar el paciente: {str(e)}")
+
+@router.get("/{patient_id}/ips-domains")
+async def get_patient_ips_domains_endpoint(patient_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.services.federation import get_patient_ips_domains
+    try:
+        result = await get_patient_ips_domains(patient_id, current_user.id, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener dominios IPS: {str(e)}")
+
+@router.get("/{patient_id}/ips-document")
+async def get_patient_ips_document_endpoint(patient_id: int, url: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.services.federation import get_patient_ips_document
+    try:
+        result = await get_patient_ips_document(patient_id, url, current_user.id, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener documento IPS: {str(e)}")
