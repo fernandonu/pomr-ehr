@@ -21,7 +21,7 @@ class Allergy(Base):
     __tablename__ = "allergy"
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("patient.id"), nullable=False)
-    snomed_concept_id = Column(String, ForeignKey("snomed_concepts.conceptid"), nullable=False)
+    snomed_concept_id = Column(String, ForeignKey("snomed_concepts_allergy.conceptid"), nullable=False)
     descripcion = Column(String, nullable=True)
     severidad = Column(String, nullable=True)
     reaccion = Column(String, nullable=True)
@@ -29,7 +29,7 @@ class Allergy(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     patient = relationship("Patient", back_populates="allergies")
-    snomed_concept = relationship("SnomedConcept")
+    snomed_concept = relationship("SnomedConceptAllergy")
 
 class Procedure(Base):
     __tablename__ = "procedure"
@@ -49,7 +49,7 @@ class Medication(Base):
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("patient.id"), nullable=False)
     problema_id = Column(Integer, ForeignKey("problem.id"), nullable=False)
-    snomed_concept_id = Column(String, ForeignKey("snomed_concepts.conceptid"), nullable=False)
+    snomed_concept_id = Column(String, ForeignKey("snomed_concepts_medication.conceptid"), nullable=False)
     descripcion = Column(String, nullable=True)
     dosis = Column(String, nullable=True)
     frecuencia = Column(String, nullable=True)
@@ -61,7 +61,7 @@ class Medication(Base):
     
     patient = relationship("Patient", back_populates="medications")
     problem = relationship("Problem")
-    snomed_concept = relationship("SnomedConcept")
+    snomed_concept = relationship("SnomedConceptMedication")
 
 class LabResult(Base):
     __tablename__ = "lab_result"

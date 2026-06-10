@@ -54,6 +54,7 @@ export const MedicationsTab = ({ patientId, medications = [], problems = [] }: {
               selectedConceptId={formData.snomed_concept_id}
               selectedTerm={formData.descripcion}
               onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
+              searchEndpoint="/snomed/search-medications"
            />
            <FormControl fullWidth margin="dense" required>
               <InputLabel>Asignar a Problema Activo</InputLabel>

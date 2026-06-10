@@ -14,3 +14,17 @@ class SnomedConceptVaccine(Base):
     id = Column(Integer, primary_key=True, index=True)
     conceptid = Column(String, unique=True, index=True, nullable=False)
     term = Column(String, index=True, nullable=False)
+
+class SnomedConceptAllergy(Base):
+    __tablename__ = "snomed_concepts_allergy"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conceptid = Column(String, unique=True, index=True, nullable=False)
+    term = Column(String, index=True, nullable=False)
+
+class SnomedConceptMedication(Base):
+    __tablename__ = "snomed_concepts_medication"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conceptid = Column(String, unique=True, index=True, nullable=False)
+    term = Column(String, index=True, nullable=False)

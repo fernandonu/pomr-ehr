@@ -50,6 +50,7 @@ export const AllergiesTab = ({ patientId, allergies = [] }: { patientId: string,
               selectedConceptId={formData.snomed_concept_id}
               selectedTerm={formData.descripcion}
               onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
+              searchEndpoint="/snomed/search-allergies"
            />
            <TextField margin="dense" label="Severidad" fullWidth value={formData.severidad} onChange={e => setFormData({...formData, severidad: e.target.value})} />
            <TextField margin="dense" label="Reacción" fullWidth value={formData.reaccion} onChange={e => setFormData({...formData, reaccion: e.target.value})} />
