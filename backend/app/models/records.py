@@ -7,7 +7,7 @@ class Vaccine(Base):
     __tablename__ = "vaccine"
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("patient.id"), nullable=False)
-    snomed_concept_id = Column(String, ForeignKey("snomed_concepts.conceptid"), nullable=False)
+    snomed_concept_id = Column(String, ForeignKey("snomed_concepts_vaccine.conceptid"), nullable=False)
     descripcion = Column(String, nullable=True)
     fecha = Column(Date, nullable=False)
     lote = Column(String, nullable=True)
@@ -15,7 +15,7 @@ class Vaccine(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     patient = relationship("Patient", back_populates="vaccines")
-    snomed_concept = relationship("SnomedConcept")
+    snomed_concept = relationship("SnomedConceptVaccine")
 
 class Allergy(Base):
     __tablename__ = "allergy"
@@ -48,6 +48,7 @@ class Medication(Base):
     __tablename__ = "medication"
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("patient.id"), nullable=False)
+    problema_id = Column(Integer, ForeignKey("problem.id"), nullable=False)
     snomed_concept_id = Column(String, ForeignKey("snomed_concepts.conceptid"), nullable=False)
     descripcion = Column(String, nullable=True)
     dosis = Column(String, nullable=True)
@@ -59,6 +60,7 @@ class Medication(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     patient = relationship("Patient", back_populates="medications")
+    problem = relationship("Problem")
     snomed_concept = relationship("SnomedConcept")
 
 class LabResult(Base):

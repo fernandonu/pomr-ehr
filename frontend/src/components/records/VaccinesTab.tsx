@@ -15,6 +15,9 @@ export const VaccinesTab = ({ patientId, vaccines = [] }: { patientId: string, v
       queryClient.invalidateQueries({ queryKey: ['records', patientId] });
       setOpen(false);
       setFormData({ snomed_concept_id: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], lote: '', observaciones: '' });
+    },
+    onError: (error: any) => {
+      alert(`Error al guardar la vacuna: ${error.response?.data?.detail || error.message}`);
     }
   });
 
@@ -46,6 +49,7 @@ export const VaccinesTab = ({ patientId, vaccines = [] }: { patientId: string, v
               label="Buscar Vacuna (SNOMED CT)"
               selectedConceptId={formData.snomed_concept_id}
               selectedTerm={formData.descripcion}
+              searchEndpoint="/snomed/search-vaccines"
               onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
            />
            <TextField margin="dense" label="Fecha de Aplicación" type="date" fullWidth value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} InputLabelProps={{ shrink: true }} />

@@ -115,11 +115,21 @@ const PatientList = () => {
     }
   });
 
+  const documentoExistente = patients?.some(
+    p => p.documento === newPatient.documento && p.id !== editingPatientId
+  );
+
   const handleSavePatient = () => {
     if (!newPatient.nombre || !newPatient.apellido || !newPatient.documento || !newPatient.fecha_nacimiento || !newPatient.sexo) {
       setSnackbar({ open: true, message: "Por favor completa todos los campos requeridos.", severity: 'error' });
       return;
     }
+    
+    if (documentoExistente) {
+      setSnackbar({ open: true, message: "El documento ingresado ya se encuentra registrado en otro paciente.", severity: 'error' });
+      return;
+    }
+
     if (editingPatientId) {
       editPatientMutation.mutate(newPatient);
     } else {
@@ -323,6 +333,8 @@ const PatientList = () => {
               label="Documento"
               value={newPatient.documento}
               onChange={(e) => setNewPatient({ ...newPatient, documento: e.target.value })}
+              error={!!documentoExistente && !!newPatient.documento}
+              helperText={!!documentoExistente && !!newPatient.documento ? "Este documento ya se encuentra registrado" : ""}
             />
             <TextField
               fullWidth

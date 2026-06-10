@@ -124,19 +124,19 @@ export default function Settings() {
                 />
               </Grid>
 
-              <Grid item xs={12} display="flex" justifyContent="flex-end" mt={2}>
-                <Button 
-                  variant="contained" 
-                  color="primary" 
-                  size="large" 
-                  startIcon={<SaveIcon />}
-                  onClick={handleSave}
-                  disabled={saveMutation.isPending || !nodoUrl || !abmUrl || !tokenExpire}
-                >
-                  {saveMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-                </Button>
-              </Grid>
             </Grid>
+            <Box display="flex" justifyContent="flex-end" mt={4} pt={2} sx={{ borderTop: '1px solid #eee' }}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="large" 
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+                disabled={saveMutation.isPending || !nodoUrl || !abmUrl || !tokenExpire}
+              >
+                {saveMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+              </Button>
+            </Box>
           </Paper>
         )}
       </Container>

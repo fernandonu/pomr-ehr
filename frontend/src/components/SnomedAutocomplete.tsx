@@ -12,13 +12,15 @@ interface SnomedAutocompleteProps {
   onSelect: (conceptId: string, term: string) => void;
   selectedConceptId?: string;
   selectedTerm?: string;
+  searchEndpoint?: string;
 }
 
 export const SnomedAutocomplete: React.FC<SnomedAutocompleteProps> = ({ 
   label, 
   onSelect, 
   selectedConceptId = '', 
-  selectedTerm = '' 
+  selectedTerm = '',
+  searchEndpoint = '/snomed/search'
 }) => {
   const [inputValue, setInputValue] = useState(selectedTerm);
   const [options, setOptions] = useState<SnomedConcept[]>([]);
@@ -47,7 +49,7 @@ export const SnomedAutocomplete: React.FC<SnomedAutocompleteProps> = ({
 
     const fetchSnomed = async () => {
       try {
-        const response = await api.get(`/snomed/search?q=${encodeURIComponent(inputValue)}`);
+        const response = await api.get(`${searchEndpoint}?q=${encodeURIComponent(inputValue)}`);
         if (active) {
           setOptions(response.data);
         }

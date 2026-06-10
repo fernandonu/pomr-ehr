@@ -162,8 +162,15 @@ const ClinicalWorkspace = () => {
     enabled: !!selectedProblem,
   });
 
-  const activeProblems = problems?.filter((p: any) => p.estado === 'activo') || [];
-  const inactiveProblems = problems?.filter((p: any) => p.estado === 'inactivo') || [];
+  const activeProblems = problems?.filter((p: any) => p.estado === 'activo').sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) || [];
+  const inactiveProblems = problems?.filter((p: any) => p.estado === 'inactivo').sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) || [];
+  
+  const sortedEvolutions = evolutions?.slice().sort((a: any, b: any) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()) || [];
+  
+  const sortRecordsDesc = (arr: any[] | undefined) => {
+    if (!arr) return [];
+    return arr.slice().sort((a, b) => new Date(b.fecha || b.fecha_inicio || b.created_at).getTime() - new Date(a.fecha || a.fecha_inicio || a.created_at).getTime());
+  };
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
@@ -196,7 +203,9 @@ const ClinicalWorkspace = () => {
 
           <Box p={2}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="subtitle1" fontWeight="bold" color="primary.dark">Problemas Activos</Typography>
+              <Typography variant="h6" fontWeight="900" color="primary.dark" textTransform="uppercase" sx={{ letterSpacing: 1 }}>
+                Problemas Activos
+              </Typography>
               {canEditClinic && (
                 <Button 
                   size="small" 
@@ -214,7 +223,10 @@ const ClinicalWorkspace = () => {
                 <ListItem key={p.id} disablePadding>
                   <ListItemButton 
                     selected={selectedProblem === p.id}
-                    onClick={() => setSelectedProblem(p.id)}
+                    onClick={() => {
+                      setSelectedProblem(p.id);
+                      setCurrentTab(0);
+                    }}
                     sx={{ 
                       borderRadius: 2, 
                       mb: 1,
@@ -227,7 +239,11 @@ const ClinicalWorkspace = () => {
                   >
                     <ListItemText 
                       primary={p.description} 
-                      primaryTypographyProps={{ fontWeight: selectedProblem === p.id ? 'bold' : 'medium' }}
+                      secondary={`Cargado el: ${new Date(p.created_at).toLocaleDateString()}`}
+                      primaryTypographyProps={{ 
+                        fontWeight: selectedProblem === p.id ? 'bold' : 'medium',
+                        fontSize: '0.9rem' 
+                      }}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -240,13 +256,18 @@ const ClinicalWorkspace = () => {
 
           <Divider />
           <Box p={2} sx={{ bgcolor: '#fafafa' }}>
-            <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" mb={2}>Problemas Inactivos</Typography>
+            <Typography variant="h6" fontWeight="900" color="text.secondary" textTransform="uppercase" mb={2} sx={{ letterSpacing: 1 }}>
+              Problemas Inactivos
+            </Typography>
             <List disablePadding>
               {inactiveProblems.map((p: any) => (
                 <ListItem key={p.id} disablePadding>
                   <ListItemButton 
                     selected={selectedProblem === p.id}
-                    onClick={() => setSelectedProblem(p.id)}
+                    onClick={() => {
+                      setSelectedProblem(p.id);
+                      setCurrentTab(0);
+                    }}
                     sx={{ 
                       borderRadius: 2, 
                       mb: 1, 
@@ -259,7 +280,8 @@ const ClinicalWorkspace = () => {
                   >
                     <ListItemText 
                       primary={p.description} 
-                      primaryTypographyProps={{ color: 'text.secondary' }}
+                      secondary={`Cargado el: ${new Date(p.created_at).toLocaleDateString()}`}
+                      primaryTypographyProps={{ color: 'text.secondary', fontSize: '0.9rem' }}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -288,7 +310,7 @@ const ClinicalWorkspace = () => {
               <Paper sx={{ p: 3, mb: 3 }} elevation={1}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="h5" fontWeight="bold" mb={1}>
+                    <Typography variant="h6" fontWeight="bold" mb={1}>
                       {problems?.find((p: any) => p.id === selectedProblem)?.description}
                     </Typography>
                     <Chip 
@@ -312,13 +334,28 @@ const ClinicalWorkspace = () => {
                       Pasar a inactivo
                     </Button>
                   )}
+                  {canEditClinic && problems?.find((p: any) => p.id === selectedProblem)?.estado === 'inactivo' && (
+                    <Button 
+                      variant="outlined" 
+                      color="success" 
+                      size="small"
+                      onClick={() => {
+                        if(window.confirm('¿Estás seguro de reactivar este problema?')) {
+                          updateProblemStatusMutation.mutate('activo');
+                        }
+                      }}
+                      disabled={updateProblemStatusMutation.isPending}
+                    >
+                      Pasar a activo
+                    </Button>
+                  )}
                 </Box>
               </Paper>
 
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h6" fontWeight="bold">Evoluciones</Typography>
                 {canEditClinic && (
-                  <Button variant="contained" disableElevation onClick={() => {
+                  <Button variant="contained" disableElevation disabled={problems?.find((p: any) => p.id === selectedProblem)?.estado === 'inactivo'} onClick={() => {
                     setNewEvolText('');
                     setNewEvolVitals({ peso_kg: '', talla_cm: '', perimetro_cefalico_cm: '', tension_arterial: '' });
                     setOpenAddEvol(true);
@@ -326,7 +363,7 @@ const ClinicalWorkspace = () => {
                 )}
               </Box>
 
-              {evolutions?.map((evo: any) => (
+              {sortedEvolutions.map((evo: any) => (
                 <Paper key={evo.id} sx={{ p: 3, mb: 2 }} elevation={1}>
                   <Box display="flex" justifyContent="space-between" mb={1} flexWrap="wrap" gap={1}>
                     <Typography variant="caption" color="text.secondary" display="block">
@@ -355,7 +392,7 @@ const ClinicalWorkspace = () => {
                   </Typography>
                 </Paper>
               ))}
-              {evolutions?.length === 0 && (
+              {sortedEvolutions.length === 0 && (
                 <Typography variant="body1" color="text.secondary">No hay evoluciones registradas para este problema.</Typography>
               )}
             </>
@@ -369,11 +406,11 @@ const ClinicalWorkspace = () => {
               </Box>
             )}
 
-            {currentTab === 1 && <AllergiesTab patientId={patientId as string} allergies={records?.allergies} />}
-            {currentTab === 2 && <MedicationsTab patientId={patientId as string} medications={records?.medications} />}
-            {currentTab === 3 && <VaccinesTab patientId={patientId as string} vaccines={records?.vaccines} />}
-            {currentTab === 4 && <LabsTab patientId={patientId as string} labs={records?.lab_results} />}
-            {currentTab === 5 && <ProceduresTab patientId={patientId as string} procedures={records?.procedures} />}
+            {currentTab === 1 && <AllergiesTab patientId={patientId as string} allergies={sortRecordsDesc(records?.allergies)} />}
+            {currentTab === 2 && <MedicationsTab patientId={patientId as string} medications={sortRecordsDesc(records?.medications)} problems={problems} />}
+            {currentTab === 3 && <VaccinesTab patientId={patientId as string} vaccines={sortRecordsDesc(records?.vaccines)} />}
+            {currentTab === 4 && <LabsTab patientId={patientId as string} labs={sortRecordsDesc(records?.lab_results)} />}
+            {currentTab === 5 && <ProceduresTab patientId={patientId as string} procedures={sortRecordsDesc(records?.procedures)} />}
           </Box>
         </Box>
       </Box>

@@ -7,3 +7,10 @@ class SnomedConcept(Base):
     id = Column(Integer, primary_key=True, index=True)
     conceptid = Column(String, unique=True, index=True, nullable=False)
     term = Column(String, index=True, nullable=False)
+
+class SnomedConceptVaccine(Base):
+    __tablename__ = "snomed_concepts_vaccine"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conceptid = Column(String, unique=True, index=True, nullable=False)
+    term = Column(String, index=True, nullable=False)

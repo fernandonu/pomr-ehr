@@ -54,6 +54,7 @@ class ProcedureResponse(ProcedureBase):
 
 class MedicationBase(BaseModel):
     paciente_id: int
+    problema_id: int
     snomed_concept_id: str
     descripcion: Optional[str] = None
     dosis: Optional[str] = None
