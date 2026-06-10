@@ -10,4 +10,9 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False) # e.g. admin, medico, enfermeria, auditor
     is_active = Column(Boolean, default=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    matricula = Column(String, nullable=True)
+    especialidad = Column(String, nullable=True)
+    servicio = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

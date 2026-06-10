@@ -66,3 +66,14 @@ async def get_patient_ips_document_endpoint(patient_id: int, url: str, db: Async
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener documento IPS: {str(e)}")
+
+@router.post("/{patient_id}/ips-transaction")
+async def send_patient_ips_transaction_endpoint(patient_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.services.federation import send_ips_transaction
+    try:
+        result = await send_ips_transaction(patient_id, current_user, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al enviar IPS (ITI-65): {str(e)}")

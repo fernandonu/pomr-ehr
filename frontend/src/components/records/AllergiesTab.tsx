@@ -10,14 +10,14 @@ export const AllergiesTab = ({ patientId, allergies = [] }: { patientId: string,
   const { role } = useAuthStore();
   const canEditClinic = role === 'superadmin' || role === 'equipo_sanitario';
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ snomed_concept_id: '', descripcion: '', severidad: '', reaccion: '', estado: 'activo' });
+  const [formData, setFormData] = useState({ snomed_concept_id: '', descripcion: '', severidad: '', reaccion: '', reaccion_snomed_id: '', estado: 'activo' });
 
   const mutation = useMutation({
     mutationFn: async (data: any) => await api.post('/records/allergy', { ...data, paciente_id: Number(patientId) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['records', patientId] });
       setOpen(false);
-      setFormData({ snomed_concept_id: '', descripcion: '', severidad: '', reaccion: '', estado: 'activo' });
+      setFormData({ snomed_concept_id: '', descripcion: '', severidad: '', reaccion: '', reaccion_snomed_id: '', estado: 'activo' });
     }
   });
 
@@ -52,8 +52,14 @@ export const AllergiesTab = ({ patientId, allergies = [] }: { patientId: string,
               onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
               searchEndpoint="/snomed/search-allergies"
            />
-           <TextField margin="dense" label="Severidad" fullWidth value={formData.severidad} onChange={e => setFormData({...formData, severidad: e.target.value})} />
-           <TextField margin="dense" label="Reacción" fullWidth value={formData.reaccion} onChange={e => setFormData({...formData, reaccion: e.target.value})} />
+           <TextField margin="dense" label="Severidad" fullWidth value={formData.severidad} onChange={e => setFormData({...formData, severidad: e.target.value})} sx={{ mb: 2 }} />
+           <SnomedAutocomplete 
+              label="Buscar Reacción (SNOMED CT)"
+              selectedConceptId={formData.reaccion_snomed_id}
+              selectedTerm={formData.reaccion}
+              onSelect={(conceptId, term) => setFormData({...formData, reaccion_snomed_id: conceptId, reaccion: term})}
+              searchEndpoint="/snomed/search-allergies"
+           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancelar</Button>

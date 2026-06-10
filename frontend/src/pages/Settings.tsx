@@ -15,6 +15,7 @@ export default function Settings() {
   const [nodoUrl, setNodoUrl] = useState('');
   const [abmUrl, setAbmUrl] = useState('');
   const [tokenExpire, setTokenExpire] = useState<number | string>('');
+  const [codigoRefes, setCodigoRefes] = useState('');
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info'}>({open: false, message: '', severity: 'info'});
 
   // If not superadmin, redirect
@@ -38,11 +39,12 @@ export default function Settings() {
       setNodoUrl(settings.NODO_BASE_URL || '');
       setAbmUrl(settings.URL_ALTA_ABM_DOMINIO || '');
       setTokenExpire(settings.ACCESS_TOKEN_EXPIRE_MINUTES || '');
+      setCodigoRefes(settings.CODIGO_REFES || '');
     }
   }, [settings]);
 
   const saveMutation = useMutation({
-    mutationFn: async (newSettings: { NODO_BASE_URL: string, URL_ALTA_ABM_DOMINIO: string, ACCESS_TOKEN_EXPIRE_MINUTES: number }) => {
+    mutationFn: async (newSettings: { NODO_BASE_URL: string, URL_ALTA_ABM_DOMINIO: string, ACCESS_TOKEN_EXPIRE_MINUTES: number, CODIGO_REFES: string }) => {
       const res = await api.put('/settings/', newSettings);
       return res.data;
     },
@@ -63,7 +65,8 @@ export default function Settings() {
     saveMutation.mutate({
       NODO_BASE_URL: nodoUrl,
       URL_ALTA_ABM_DOMINIO: abmUrl,
-      ACCESS_TOKEN_EXPIRE_MINUTES: Number(tokenExpire)
+      ACCESS_TOKEN_EXPIRE_MINUTES: Number(tokenExpire),
+      CODIGO_REFES: codigoRefes
     });
   };
 
@@ -108,6 +111,15 @@ export default function Settings() {
                   value={abmUrl}
                   onChange={(e) => setAbmUrl(e.target.value)}
                   helperText="Sistema de Identificación (Renaper)"
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Código REFES Efector"
+                  variant="outlined"
+                  value={codigoRefes}
+                  onChange={(e) => setCodigoRefes(e.target.value)}
+                  helperText="Código oficial de la institución en el Registro Federal (Ej. 2004010004)"
                 />
               </Grid>
 

@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.patient import Patient
 from app.models.api_log import ApiLog
+from app.models.user import User
+from app.services.records_service import get_patient_records
+from app.services.ips_builder import build_ips_transaction_bundle
 
 from app.core.config import settings
 
@@ -27,7 +30,7 @@ async def federate_patient(patient_id: int, current_user_id: int, db: AsyncSessi
     if not patient:
         raise ValueError("Patient not found")
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False, follow_redirects=True) as client:
         # Step 1: ITI-78 - Find Patient
         find_url = f"{settings.NODO_BASE_URL}/fhir/Patient?identifier=http://www.renaper.gob.ar/dni|{patient.documento}"
         try:
@@ -135,7 +138,7 @@ async def get_patient_ips_domains(patient_id: int, current_user_id: int, db: Asy
     if not patient:
         raise ValueError("Patient not found")
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False, follow_redirects=True) as client:
         # ITI-67 - Find Document Reference By Patient
         doc_url = f"{settings.NODO_BASE_URL}/fhir/DocumentReference?patient.identifier=http://www.renaper.gob.ar/dni|{patient.documento}"
         try:
@@ -153,7 +156,7 @@ async def get_patient_ips_document(patient_id: int, bundle_url: str, current_use
     if not result.scalars().first():
         raise ValueError("Patient not found")
 
-    async with httpx.AsyncClient(verify=False) as client: # Using verify=False just in case internal nodes have self-signed certs
+    async with httpx.AsyncClient(verify=False, follow_redirects=True) as client: # Using verify=False just in case internal nodes have self-signed certs
         # ITI-68 - Get IPS Document
         try:
             doc_resp = await client.get(bundle_url, timeout=15.0)
@@ -172,3 +175,39 @@ async def get_patient_ips_document(patient_id: int, bundle_url: str, current_use
         except Exception as e:
             await log_api_call(db, patient_id, f"{bundle_url} (ITI-68)", "GET", None, {"error": str(e)}, 500)
             return {"status": "error", "message": f"Error de conexión al nodo: {str(e)}", "data": None}
+
+async def send_ips_transaction(patient_id: int, current_user: User, db: AsyncSession):
+    # Validates patient exists for context
+    result = await db.execute(select(Patient).filter(Patient.id == patient_id))
+    patient = result.scalars().first()
+    if not patient:
+        raise ValueError("Patient not found")
+        
+    if not patient.federation_id:
+        return {"status": "error", "message": "El paciente no está federado (falta federation_id)."}
+        
+    # Get all clinical records
+    records = await get_patient_records(db, patient_id)
+    
+    # Build Bundle
+    transaction_bundle = build_ips_transaction_bundle(patient, current_user, records)
+    
+    # Send ITI-65
+    async with httpx.AsyncClient(verify=False, follow_redirects=True) as client:
+        url = f"{settings.NODO_BASE_URL}/fhir/"  # Added trailing slash to avoid 301 POST->GET redirect
+        try:
+            resp = await client.post(url, json=transaction_bundle, timeout=15.0)
+            try:
+                data = resp.json()
+            except:
+                data = {"raw_response": resp.text}
+                
+            await log_api_call(db, patient_id, "/fhir (ITI-65)", "POST", transaction_bundle, data, resp.status_code)
+            
+            if resp.status_code in [200, 201]:
+                return {"status": "success", "message": "IPS enviado exitosamente", "data": data}
+            else:
+                return {"status": "error", "message": f"Error al enviar IPS ({resp.status_code})", "data": data}
+        except Exception as e:
+            await log_api_call(db, patient_id, "/fhir (ITI-65)", "POST", transaction_bundle, {"error": str(e)}, 500)
+            return {"status": "error", "message": f"Error de conexión al nodo: {str(e)}"}

@@ -25,11 +25,13 @@ class Allergy(Base):
     descripcion = Column(String, nullable=True)
     severidad = Column(String, nullable=True)
     reaccion = Column(String, nullable=True)
+    reaccion_snomed_id = Column(String, ForeignKey("snomed_concepts_allergy.conceptid"), nullable=True)
     estado = Column(String, nullable=False) # e.g. activo, inactivo
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     patient = relationship("Patient", back_populates="allergies")
-    snomed_concept = relationship("SnomedConceptAllergy")
+    snomed_concept = relationship("SnomedConceptAllergy", foreign_keys=[snomed_concept_id])
+    reaccion_snomed_concept = relationship("SnomedConceptAllergy", foreign_keys=[reaccion_snomed_id])
 
 class Procedure(Base):
     __tablename__ = "procedure"

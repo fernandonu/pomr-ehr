@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     
     NODO_BASE_URL: str = "https://ipsgarrahan.fgnu.ar"
     URL_ALTA_ABM_DOMINIO: str = "https://sigep.saludtdf.gob.ar/"
+    CODIGO_REFES: str = "2004010004"
 
     class Config:
         case_sensitive = True

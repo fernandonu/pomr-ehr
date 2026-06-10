@@ -25,6 +25,7 @@ class AllergyBase(BaseModel):
     descripcion: Optional[str] = None
     severidad: Optional[str] = None
     reaccion: Optional[str] = None
+    reaccion_snomed_id: Optional[str] = None
     estado: str
 
 class AllergyCreate(AllergyBase):

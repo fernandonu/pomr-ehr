@@ -129,6 +129,22 @@ const ClinicalWorkspace = () => {
     }
   });
 
+  const sendIpsMutation = useMutation({
+    mutationFn: async () => {
+      return await api.post(`/patients/${patientId}/ips-transaction`);
+    },
+    onSuccess: (res) => {
+      if (res.data?.status === 'success') {
+        alert('IPS enviado exitosamente al bus de interoperabilidad.');
+      } else {
+        alert('Error al enviar IPS: ' + (res.data?.message || 'Revisa los logs.'));
+      }
+    },
+    onError: (err: any) => {
+      alert('Error de red al enviar IPS: ' + err.message);
+    }
+  });
+
   const handleOpenEdit = (evo: any) => {
     setEditEvolId(evo.id);
     setNewEvolText(evo.texto_clinico);
@@ -199,6 +215,23 @@ const ClinicalWorkspace = () => {
                 Fecha Nac.: {formatDate(patient.fecha_nacimiento)} ({calculateAge(patient.fecha_nacimiento)} años)
               </Typography>
             )}
+            
+            <Box mt={2}>
+              <Button 
+                variant="outlined" 
+                color="secondary" 
+                size="small" 
+                fullWidth 
+                onClick={() => {
+                  if (window.confirm('¿Desea enviar el Resumen de Paciente (IPS) al nodo nacional?')) {
+                    sendIpsMutation.mutate();
+                  }
+                }}
+                disabled={sendIpsMutation.isPending}
+              >
+                {sendIpsMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Enviar IPS (ITI-65)'}
+              </Button>
+            </Box>
           </Box>
           <Divider />
 
