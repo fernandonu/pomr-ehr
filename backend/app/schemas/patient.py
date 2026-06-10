@@ -26,5 +26,7 @@ class PatientUpdate(PatientBase):
 class PatientResponse(PatientBase):
     id: int
     created_at: datetime
+    federation_id: Optional[str] = None
+    federated_by: Optional[int] = None
     
     model_config = ConfigDict(from_attributes=True)

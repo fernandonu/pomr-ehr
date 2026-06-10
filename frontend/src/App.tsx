@@ -2,11 +2,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from './store/authStore';
-import Dashboard from './pages/Dashboard';
+import PatientList from './pages/PatientList';
 import ClinicalWorkspace from './pages/ClinicalWorkspace';
 import Login from './pages/Login';
 import UsersManager from './pages/UsersManager';
 import ApiLogs from './pages/ApiLogs';
+import Settings from './pages/Settings';
 
 const queryClient = new QueryClient();
 
@@ -57,7 +58,7 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <PatientList />
                 </ProtectedRoute>
               }
             />
@@ -74,6 +75,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
                   <ApiLogs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <Settings />
                 </ProtectedRoute>
               }
             />

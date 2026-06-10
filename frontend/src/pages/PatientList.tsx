@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import {
   Box, Typography, Container, Paper, TextField, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem
+  IconButton, AppBar, Toolbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem,
+  Snackbar, Alert, Tooltip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudSyncIcon from '@mui/icons-material/CloudSync';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
@@ -23,9 +25,11 @@ interface Patient {
   sexo: string;
   telefono?: string;
   apellido_materno?: string;
+  federation_id?: string;
+  federated_by?: number;
 }
 
-const Dashboard = () => {
+const PatientList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
@@ -38,6 +42,7 @@ const Dashboard = () => {
     telefono: '',
     apellido_materno: ''
   });
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info'}>({open: false, message: '', severity: 'info'});
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -63,10 +68,12 @@ const Dashboard = () => {
       setIsDialogOpen(false);
       setNewPatient({ nombre: '', apellido: '', documento: '', fecha_nacimiento: '', sexo: '', telefono: '', apellido_materno: '' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error(error);
-      const detail = error.response?.data?.detail;
-      alert(`Error al guardar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || error.message}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = error as any;
+      const detail = err.response?.data?.detail;
+      setSnackbar({ open: true, message: `Error al guardar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || err.message}`, severity: 'error' });
     }
   });
 
@@ -81,10 +88,12 @@ const Dashboard = () => {
       setEditingPatientId(null);
       setNewPatient({ nombre: '', apellido: '', documento: '', fecha_nacimiento: '', sexo: '', telefono: '', apellido_materno: '' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error(error);
-      const detail = error.response?.data?.detail;
-      alert(`Error al guardar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || error.message}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = error as any;
+      const detail = err.response?.data?.detail;
+      setSnackbar({ open: true, message: `Error al guardar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || err.message}`, severity: 'error' });
     }
   });
 
@@ -94,18 +103,21 @@ const Dashboard = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      alert(data.message || 'Operación exitosa');
+      setSnackbar({ open: true, message: data.message || 'Operación exitosa', severity: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error(error);
-      const detail = error.response?.data?.detail;
-      alert(`Error al federar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || error.message}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = error as any;
+      const detail = err.response?.data?.detail;
+      setSnackbar({ open: true, message: `Error al federar: ${typeof detail === 'string' ? detail : JSON.stringify(detail) || err.message}`, severity: 'error' });
     }
   });
 
   const handleSavePatient = () => {
     if (!newPatient.nombre || !newPatient.apellido || !newPatient.documento || !newPatient.fecha_nacimiento || !newPatient.sexo) {
-      alert("Por favor completa todos los campos requeridos.");
+      setSnackbar({ open: true, message: "Por favor completa todos los campos requeridos.", severity: 'error' });
       return;
     }
     if (editingPatientId) {
@@ -157,6 +169,9 @@ const Dashboard = () => {
               </Button>
               <Button color="inherit" onClick={() => navigate('/users')}>
                 Gestión de Usuarios
+              </Button>
+              <Button color="inherit" onClick={() => navigate('/settings')}>
+                Configuración
               </Button>
             </Box>
           )}
@@ -218,7 +233,14 @@ const Dashboard = () => {
                     sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { backgroundColor: '#f5f5f5' } }}
                   >
                     <TableCell component="th" scope="row">{row.id}</TableCell>
-                    <TableCell>{row.apellido}, {row.nombre}</TableCell>
+                    <TableCell>
+                      {row.apellido}, {row.nombre}
+                      {row.federation_id && (
+                        <Tooltip title={`Federado (ID: ${row.federation_id})`}>
+                          <CheckCircleIcon color="success" fontSize="small" sx={{ ml: 1, verticalAlign: 'middle' }} />
+                        </Tooltip>
+                      )}
+                    </TableCell>
                     <TableCell>{row.documento}</TableCell>
                     <TableCell>{formatDate(row.fecha_nacimiento)}</TableCell>
                     <TableCell>{formatSexo(row.sexo)}</TableCell>
@@ -251,14 +273,16 @@ const Dashboard = () => {
                       >
                         <VisibilityIcon />
                       </IconButton>
-                      <IconButton
-                        color="secondary"
-                        aria-label="federar paciente"
-                        onClick={() => federateMutation.mutate(row.id)}
-                        disabled={federateMutation.isPending}
-                      >
-                        <CloudSyncIcon />
-                      </IconButton>
+                      <Tooltip title={row.federation_id ? "Sincronizar datos" : "Federar paciente"}>
+                        <IconButton
+                          color={row.federation_id ? "success" : "secondary"}
+                          aria-label="federar paciente"
+                          onClick={() => federateMutation.mutate(row.id)}
+                          disabled={federateMutation.isPending}
+                        >
+                          <CloudSyncIcon />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))
@@ -356,8 +380,18 @@ const Dashboard = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-export default Dashboard;
+export default PatientList;

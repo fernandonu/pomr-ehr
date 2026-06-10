@@ -16,9 +16,13 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     SECRET_KEY: str = "CHANGEME_IN_PRODUCTION"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    
+    NODO_BASE_URL: str = "https://ipsgarrahan.fgnu.ar"
+    URL_ALTA_ABM_DOMINIO: str = "https://sigep.saludtdf.gob.ar/"
 
     class Config:
         case_sensitive = True
+        env_file = ".env"
 
 settings = Settings()

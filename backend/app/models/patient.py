@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime
+from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
@@ -14,6 +14,8 @@ class Patient(Base):
     fecha_nacimiento = Column(Date, nullable=False)
     sexo = Column(String, nullable=False)
     telefono = Column(String, nullable=True)
+    federation_id = Column(String, nullable=True)
+    federated_by = Column(Integer, ForeignKey("user.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     problems = relationship("Problem", back_populates="patient", cascade="all, delete-orphan")

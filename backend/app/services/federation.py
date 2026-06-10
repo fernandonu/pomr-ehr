@@ -7,8 +7,7 @@ from sqlalchemy.future import select
 from app.models.patient import Patient
 from app.models.api_log import ApiLog
 
-NODO_BASE_URL = os.getenv("NODO_BASE_URL", "https://ipsgarrahan.fgnu.ar")
-URL_ALTA_ABM_DOMINIO = os.getenv("URL_ALTA_ABM_DOMINIO", "https://sigep.saludtdf.gob.ar/")
+from app.core.config import settings
 
 async def log_api_call(db: AsyncSession, patient_id: int, endpoint: str, method: str, req_payload: dict, res_payload: dict, status_code: int):
     log = ApiLog(
@@ -22,7 +21,7 @@ async def log_api_call(db: AsyncSession, patient_id: int, endpoint: str, method:
     db.add(log)
     await db.commit()
 
-async def federate_patient(patient_id: int, db: AsyncSession):
+async def federate_patient(patient_id: int, current_user_id: int, db: AsyncSession):
     result = await db.execute(select(Patient).filter(Patient.id == patient_id))
     patient = result.scalars().first()
     if not patient:
@@ -30,7 +29,7 @@ async def federate_patient(patient_id: int, db: AsyncSession):
 
     async with httpx.AsyncClient() as client:
         # Step 1: ITI-78 - Find Patient
-        find_url = f"{NODO_BASE_URL}/fhir/Patient?identifier=http://www.renaper.gob.ar/dni|{patient.documento}"
+        find_url = f"{settings.NODO_BASE_URL}/fhir/Patient?identifier=http://www.renaper.gob.ar/dni|{patient.documento}"
         try:
             find_resp = await client.get(find_url, timeout=10.0)
             find_data = find_resp.json()
@@ -47,12 +46,15 @@ async def federate_patient(patient_id: int, db: AsyncSession):
             
             if remote_id:
                 # Step 2: ITI-78 - Get Patient
-                get_url = f"{NODO_BASE_URL}/fhir/Patient/{remote_id}"
+                get_url = f"{settings.NODO_BASE_URL}/fhir/Patient/{remote_id}"
                 try:
                     get_resp = await client.get(get_url, timeout=10.0)
                     get_data = get_resp.json()
                     await log_api_call(db, patient_id, f"/fhir/Patient/{remote_id} (Get)", "GET", None, get_data, get_resp.status_code)
                     if get_resp.status_code == 200:
+                        patient.federation_id = remote_id
+                        patient.federated_by = current_user_id
+                        await db.commit()
                         return {"status": "success", "message": f"El paciente ya se encuentra federado con ID: {remote_id}", "data": get_data}
                 except Exception as e:
                     await log_api_call(db, patient_id, f"/fhir/Patient/{remote_id} (Get)", "GET", None, {"error": str(e)}, 500)
@@ -73,7 +75,7 @@ async def federate_patient(patient_id: int, db: AsyncSession):
                 },
                 {
                     "use": "usual",
-                    "system": URL_ALTA_ABM_DOMINIO,
+                    "system": settings.URL_ALTA_ABM_DOMINIO,
                     "value": str(patient.id)
                 }
             ],
@@ -108,13 +110,18 @@ async def federate_patient(patient_id: int, db: AsyncSession):
             "birthDate": patient.fecha_nacimiento.isoformat() if patient.fecha_nacimiento else "1900-01-01"
         }
 
-        create_url = f"{NODO_BASE_URL}/fhir/Patient"
+        create_url = f"{settings.NODO_BASE_URL}/fhir/Patient"
         try:
             create_resp = await client.post(create_url, json=fhir_payload, timeout=10.0)
             create_data = create_resp.json()
             await log_api_call(db, patient_id, "/fhir/Patient (Create)", "POST", fhir_payload, create_data, create_resp.status_code)
             
             if create_resp.status_code in [200, 201]:
+                remote_id = create_data.get("id") or (create_data.get("entry") and create_data["entry"][0].get("id"))
+                if remote_id:
+                    patient.federation_id = remote_id
+                    patient.federated_by = current_user_id
+                    await db.commit()
                 return {"status": "success", "message": "Paciente federado exitosamente", "data": create_data}
             else:
                 return {"status": "error", "message": "Error al federar el paciente", "data": create_data}

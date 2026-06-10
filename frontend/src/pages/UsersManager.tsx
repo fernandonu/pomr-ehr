@@ -24,7 +24,7 @@ export default function UsersManager() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newUser: any) => {
+    mutationFn: async (newUser: { username: string, password?: string, role: string, is_active: boolean }) => {
       await api.post('/users/', newUser);
     },
     onSuccess: () => {
@@ -64,6 +64,7 @@ export default function UsersManager() {
             Historia Clínica Electrónica
           </Typography>
           <Button color="inherit" onClick={() => navigate('/')}>Listado de pacientes</Button>
+          <Button color="inherit" onClick={() => navigate('/settings')}>Configuración</Button>
         </Toolbar>
       </AppBar>
 
@@ -84,7 +85,7 @@ export default function UsersManager() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user: any) => (
+            {users.map((user: { id: number, username: string, role: string }) => (
               <TableRow key={user.id}>
                 <TableCell>{user.id}</TableCell>
                 <TableCell>{user.username}</TableCell>

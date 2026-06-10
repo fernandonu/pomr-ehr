@@ -38,7 +38,7 @@ async def update_patient(patient_id: int, patient_update: PatientUpdate, db: Asy
 async def federate_patient_endpoint(patient_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     from app.services.federation import federate_patient
     try:
-        result = await federate_patient(patient_id, db)
+        result = await federate_patient(patient_id, current_user.id, db)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
