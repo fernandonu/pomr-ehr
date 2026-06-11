@@ -16,6 +16,9 @@ export default function Settings() {
   const [abmUrl, setAbmUrl] = useState('');
   const [tokenExpire, setTokenExpire] = useState<number | string>('');
   const [codigoRefes, setCodigoRefes] = useState('');
+  const [renaperNombre, setRenaperNombre] = useState('');
+  const [renaperClave, setRenaperClave] = useState('');
+  const [renaperCodDominio, setRenaperCodDominio] = useState('');
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info'}>({open: false, message: '', severity: 'info'});
 
   // If not superadmin, redirect
@@ -40,11 +43,14 @@ export default function Settings() {
       setAbmUrl(settings.URL_ALTA_ABM_DOMINIO || '');
       setTokenExpire(settings.ACCESS_TOKEN_EXPIRE_MINUTES || '');
       setCodigoRefes(settings.CODIGO_REFES || '');
+      setRenaperNombre(settings.RENAPER_NOMBRE || '');
+      setRenaperClave(settings.RENAPER_CLAVE || '');
+      setRenaperCodDominio(settings.RENAPER_COD_DOMINIO || '');
     }
   }, [settings]);
 
   const saveMutation = useMutation({
-    mutationFn: async (newSettings: { NODO_BASE_URL: string, URL_ALTA_ABM_DOMINIO: string, ACCESS_TOKEN_EXPIRE_MINUTES: number, CODIGO_REFES: string }) => {
+    mutationFn: async (newSettings: { NODO_BASE_URL: string, URL_ALTA_ABM_DOMINIO: string, ACCESS_TOKEN_EXPIRE_MINUTES: number, CODIGO_REFES: string, RENAPER_NOMBRE: string, RENAPER_CLAVE: string, RENAPER_COD_DOMINIO: string }) => {
       const res = await api.put('/settings/', newSettings);
       return res.data;
     },
@@ -66,7 +72,10 @@ export default function Settings() {
       NODO_BASE_URL: nodoUrl,
       URL_ALTA_ABM_DOMINIO: abmUrl,
       ACCESS_TOKEN_EXPIRE_MINUTES: Number(tokenExpire),
-      CODIGO_REFES: codigoRefes
+      CODIGO_REFES: codigoRefes,
+      RENAPER_NOMBRE: renaperNombre,
+      RENAPER_CLAVE: renaperClave,
+      RENAPER_COD_DOMINIO: renaperCodDominio
     });
   };
 
@@ -133,6 +142,34 @@ export default function Settings() {
                   value={tokenExpire}
                   onChange={(e) => setTokenExpire(e.target.value)}
                   helperText="El tiempo en minutos que dura una sesión (1 hora = 60, 1 día = 1440)"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Credenciales BUS MSAL (Renaper y Cobertura)</Typography>
+                <TextField
+                  fullWidth
+                  label="Nombre de Usuario (Token)"
+                  variant="outlined"
+                  value={renaperNombre}
+                  onChange={(e) => setRenaperNombre(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Clave (Token)"
+                  variant="outlined"
+                  value={renaperClave}
+                  onChange={(e) => setRenaperClave(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="Código de Dominio"
+                  variant="outlined"
+                  value={renaperCodDominio}
+                  onChange={(e) => setRenaperCodDominio(e.target.value)}
+                  helperText="URL o identificador del dominio institucional"
                 />
               </Grid>
 

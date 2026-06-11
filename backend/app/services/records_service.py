@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.records import Vaccine, Allergy, Procedure, Medication, LabResult
+from app.models.problem import Problem
 from app.schemas.records import (
     VaccineCreate, AllergyCreate, ProcedureCreate, MedicationCreate, LabResultCreate
 )
@@ -13,13 +14,15 @@ async def get_patient_records(db: AsyncSession, paciente_id: int):
     procedures = (await db.execute(select(Procedure).filter(Procedure.paciente_id == paciente_id))).scalars().all()
     medications = (await db.execute(select(Medication).filter(Medication.paciente_id == paciente_id))).scalars().all()
     labs = (await db.execute(select(LabResult).filter(LabResult.paciente_id == paciente_id))).scalars().all()
+    problems = (await db.execute(select(Problem).filter(Problem.paciente_id == paciente_id))).scalars().all()
     
     return {
         "vaccines": vaccines,
         "allergies": allergies,
         "procedures": procedures,
         "medications": medications,
-        "lab_results": labs
+        "lab_results": labs,
+        "problems": problems
     }
 
 async def create_vaccine(db: AsyncSession, item: VaccineCreate) -> Vaccine:

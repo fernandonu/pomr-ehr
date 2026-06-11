@@ -13,6 +13,9 @@ class SettingsUpdate(BaseModel):
     URL_ALTA_ABM_DOMINIO: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     CODIGO_REFES: str
+    RENAPER_NOMBRE: str
+    RENAPER_CLAVE: str
+    RENAPER_COD_DOMINIO: str
 
 @router.get("/")
 def get_settings(current_user: User = Depends(get_current_user)):
@@ -23,7 +26,10 @@ def get_settings(current_user: User = Depends(get_current_user)):
         "NODO_BASE_URL": settings.NODO_BASE_URL,
         "URL_ALTA_ABM_DOMINIO": settings.URL_ALTA_ABM_DOMINIO,
         "ACCESS_TOKEN_EXPIRE_MINUTES": settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-        "CODIGO_REFES": settings.CODIGO_REFES
+        "CODIGO_REFES": settings.CODIGO_REFES,
+        "RENAPER_NOMBRE": settings.RENAPER_NOMBRE,
+        "RENAPER_CLAVE": settings.RENAPER_CLAVE,
+        "RENAPER_COD_DOMINIO": settings.RENAPER_COD_DOMINIO
     }
 
 @router.put("/")
@@ -39,6 +45,9 @@ def update_settings(
     settings.URL_ALTA_ABM_DOMINIO = settings_in.URL_ALTA_ABM_DOMINIO
     settings.ACCESS_TOKEN_EXPIRE_MINUTES = settings_in.ACCESS_TOKEN_EXPIRE_MINUTES
     settings.CODIGO_REFES = settings_in.CODIGO_REFES
+    settings.RENAPER_NOMBRE = settings_in.RENAPER_NOMBRE
+    settings.RENAPER_CLAVE = settings_in.RENAPER_CLAVE
+    settings.RENAPER_COD_DOMINIO = settings_in.RENAPER_COD_DOMINIO
     
     # Save to .env file to persist across restarts
     env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -52,5 +61,8 @@ def update_settings(
     set_key(env_file, "URL_ALTA_ABM_DOMINIO", settings_in.URL_ALTA_ABM_DOMINIO)
     set_key(env_file, "ACCESS_TOKEN_EXPIRE_MINUTES", str(settings_in.ACCESS_TOKEN_EXPIRE_MINUTES))
     set_key(env_file, "CODIGO_REFES", settings_in.CODIGO_REFES)
+    set_key(env_file, "RENAPER_NOMBRE", settings_in.RENAPER_NOMBRE)
+    set_key(env_file, "RENAPER_CLAVE", settings_in.RENAPER_CLAVE)
+    set_key(env_file, "RENAPER_COD_DOMINIO", settings_in.RENAPER_COD_DOMINIO)
     
     return {"status": "success", "message": "Settings updated successfully"}

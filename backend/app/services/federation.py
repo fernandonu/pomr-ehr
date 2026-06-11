@@ -12,7 +12,9 @@ from app.services.ips_builder import build_ips_transaction_bundle
 
 from app.core.config import settings
 
-async def log_api_call(db: AsyncSession, patient_id: int, endpoint: str, method: str, req_payload: dict, res_payload: dict, status_code: int):
+from typing import Optional
+
+async def log_api_call(db: AsyncSession, patient_id: Optional[int], endpoint: str, method: str, req_payload: dict, res_payload: dict, status_code: int):
     log = ApiLog(
         patient_id=patient_id,
         endpoint=endpoint,
@@ -194,7 +196,7 @@ async def send_ips_transaction(patient_id: int, current_user: User, db: AsyncSes
     
     # Send ITI-65
     async with httpx.AsyncClient(verify=False, follow_redirects=True) as client:
-        url = f"{settings.NODO_BASE_URL}/fhir/"  # Added trailing slash to avoid 301 POST->GET redirect
+        url = f"{settings.NODO_BASE_URL}/fhir/IPSTransaction"
         try:
             resp = await client.post(url, json=transaction_bundle, timeout=15.0)
             try:
@@ -202,12 +204,12 @@ async def send_ips_transaction(patient_id: int, current_user: User, db: AsyncSes
             except:
                 data = {"raw_response": resp.text}
                 
-            await log_api_call(db, patient_id, "/fhir (ITI-65)", "POST", transaction_bundle, data, resp.status_code)
+            await log_api_call(db, patient_id, "/fhir/IPSTransaction (ITI-65)", "POST", transaction_bundle, data, resp.status_code)
             
             if resp.status_code in [200, 201]:
                 return {"status": "success", "message": "IPS enviado exitosamente", "data": data}
             else:
                 return {"status": "error", "message": f"Error al enviar IPS ({resp.status_code})", "data": data}
         except Exception as e:
-            await log_api_call(db, patient_id, "/fhir (ITI-65)", "POST", transaction_bundle, {"error": str(e)}, 500)
+            await log_api_call(db, patient_id, "/fhir/IPSTransaction (ITI-65)", "POST", transaction_bundle, {"error": str(e)}, 500)
             return {"status": "error", "message": f"Error de conexión al nodo: {str(e)}"}

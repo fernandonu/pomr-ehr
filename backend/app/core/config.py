@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     NODO_BASE_URL: str = "https://ipsgarrahan.fgnu.ar"
     URL_ALTA_ABM_DOMINIO: str = "https://sigep.saludtdf.gob.ar/"
     CODIGO_REFES: str = "2004010004"
+    
+    RENAPER_NOMBRE: str = "AwAfBhRGFggUDAQAH10TABMCHA=="
+    RENAPER_CLAVE: str = "P00cG1EaPSAjVjQVAUZGWUQ="
+    RENAPER_COD_DOMINIO: str = "https://hc.salud.chaco.gob.ar"
 
     class Config:
         case_sensitive = True

@@ -77,3 +77,12 @@ async def send_patient_ips_transaction_endpoint(patient_id: int, db: AsyncSessio
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al enviar IPS (ITI-65): {str(e)}")
+
+@router.get("/validate-renaper/cobertura")
+async def validate_renaper_cobertura_endpoint(documento: str, sexo: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.services.renaper_service import validate_renaper_cobertura
+    try:
+        result = await validate_renaper_cobertura(documento, sexo, db)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al validar con Renaper: {str(e)}")

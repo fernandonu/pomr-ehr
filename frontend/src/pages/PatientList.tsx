@@ -15,6 +15,13 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
+
+dayjs.locale('es');
 
 interface Patient {
   id: number;
@@ -27,6 +34,7 @@ interface Patient {
   apellido_materno?: string;
   federation_id?: string;
   federated_by?: number;
+  cobertura?: string;
 }
 
 const PatientList = () => {
@@ -42,9 +50,11 @@ const PatientList = () => {
     fecha_nacimiento: '',
     sexo: '',
     telefono: '',
-    apellido_materno: ''
+    apellido_materno: '',
+    cobertura: ''
   });
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info'}>({open: false, message: '', severity: 'info'});
+  const [isValidatingRenaper, setIsValidatingRenaper] = useState(false);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -120,6 +130,29 @@ const PatientList = () => {
   const documentoExistente = patients?.some(
     p => p.documento === newPatient.documento && p.id !== editingPatientId
   );
+
+  const handleValidateRenaper = async () => {
+    if (!newPatient.documento || !newPatient.sexo) return;
+    setIsValidatingRenaper(true);
+    try {
+      const res = await api.get(`/patients/validate-renaper/cobertura?documento=${newPatient.documento}&sexo=${newPatient.sexo}`);
+      if (res.data) {
+        setNewPatient(prev => ({
+          ...prev,
+          nombre: res.data.nombre || prev.nombre,
+          apellido: res.data.apellido || prev.apellido,
+          fecha_nacimiento: res.data.fecha_nacimiento || prev.fecha_nacimiento,
+          cobertura: res.data.cobertura || prev.cobertura
+        }));
+        setSnackbar({ open: true, message: "Datos validados correctamente desde el BUS.", severity: 'success' });
+      }
+    } catch (err: any) {
+      console.error(err);
+      setSnackbar({ open: true, message: "No se pudieron obtener datos del BUS para este documento.", severity: 'info' });
+    } finally {
+      setIsValidatingRenaper(false);
+    }
+  };
 
   const handleSavePatient = () => {
     if (!newPatient.nombre || !newPatient.apellido || !newPatient.documento || !newPatient.fecha_nacimiento || !newPatient.sexo) {
@@ -335,6 +368,31 @@ const PatientList = () => {
             <TextField
               fullWidth
               margin="dense"
+              label="Documento"
+              value={newPatient.documento}
+              onChange={(e) => setNewPatient({ ...newPatient, documento: e.target.value })}
+              error={!!documentoExistente && !!newPatient.documento}
+              helperText={!!documentoExistente && !!newPatient.documento ? "Este documento ya se encuentra registrado" : ""}
+            />
+            <TextField
+              fullWidth
+              margin="dense"
+              select
+              label="Sexo"
+              value={newPatient.sexo}
+              onChange={(e) => {
+                setNewPatient({ ...newPatient, sexo: e.target.value });
+              }}
+              onBlur={handleValidateRenaper}
+              disabled={isValidatingRenaper}
+            >
+              <MenuItem value="M">Masculino</MenuItem>
+              <MenuItem value="F">Femenino</MenuItem>
+              <MenuItem value="X">Otro</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              margin="dense"
               label="Nombre"
               value={newPatient.nombre}
               onChange={(e) => setNewPatient({ ...newPatient, nombre: e.target.value })}
@@ -353,57 +411,34 @@ const PatientList = () => {
               value={newPatient.apellido_materno}
               onChange={(e) => setNewPatient({ ...newPatient, apellido_materno: e.target.value })}
             />
-            <TextField
-              fullWidth
-              margin="dense"
-              label="Documento"
-              value={newPatient.documento}
-              onChange={(e) => setNewPatient({ ...newPatient, documento: e.target.value })}
-              error={!!documentoExistente && !!newPatient.documento}
-              helperText={!!documentoExistente && !!newPatient.documento ? "Este documento ya se encuentra registrado" : ""}
-            />
-            <TextField
-              fullWidth
-              margin="dense"
-              label="Fecha de Nacimiento"
-              type={newPatient.fecha_nacimiento ? "date" : "text"}
-              onFocus={(e) => { (e.target as HTMLInputElement).type = 'date'; }}
-              onBlur={(e) => {
-                if (!newPatient.fecha_nacimiento) {
-                  (e.target as HTMLInputElement).type = 'text';
-                }
-              }}
-              value={newPatient.fecha_nacimiento}
-              onChange={(e) => setNewPatient({ ...newPatient, fecha_nacimiento: e.target.value })}
-              onKeyDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                const target = e.target as HTMLInputElement;
-                if (target.type !== 'date') {
-                  target.type = 'date';
-                }
-                if (target.showPicker) {
-                  setTimeout(() => target.showPicker(), 50);
-                }
-              }}
-            />
-            <TextField
-              fullWidth
-              margin="dense"
-              select
-              label="Sexo"
-              value={newPatient.sexo}
-              onChange={(e) => setNewPatient({ ...newPatient, sexo: e.target.value })}
-            >
-              <MenuItem value="M">Masculino</MenuItem>
-              <MenuItem value="F">Femenino</MenuItem>
-              <MenuItem value="X">Otro</MenuItem>
-            </TextField>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+              <DatePicker
+                label="Fecha de Nacimiento"
+                value={newPatient.fecha_nacimiento ? dayjs(newPatient.fecha_nacimiento, 'YYYY-MM-DD') : null}
+                onChange={(newValue) => setNewPatient({ ...newPatient, fecha_nacimiento: newValue ? newValue.format('YYYY-MM-DD') : '' })}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    margin: 'dense'
+                  }
+                }}
+              />
+            </LocalizationProvider>
             <TextField
               fullWidth
               margin="dense"
               label="Teléfono"
               value={newPatient.telefono}
               onChange={(e) => setNewPatient({ ...newPatient, telefono: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              margin="dense"
+              label="Cobertura Social"
+              value={newPatient.cobertura || ''}
+              onChange={(e) => setNewPatient({ ...newPatient, cobertura: e.target.value })}
+              helperText="Información obtenida del servicio de cobertura MSAL"
             />
           </Box>
         </DialogContent>
@@ -412,7 +447,7 @@ const PatientList = () => {
           <Button
             variant="contained"
             onClick={handleSavePatient}
-            disabled={createPatientMutation.isPending || editPatientMutation.isPending}
+            disabled={createPatientMutation.isPending || editPatientMutation.isPending || !!documentoExistente}
           >
             {createPatientMutation.isPending || editPatientMutation.isPending ? 'Guardando...' : 'Guardar'}
           </Button>

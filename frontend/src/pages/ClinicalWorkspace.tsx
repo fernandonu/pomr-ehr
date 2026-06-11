@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Box, Typography, Paper, Divider, List, ListItem, ListItemText, ListItemButton,
   AppBar, Toolbar, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Tabs, Tab, IconButton, CircularProgress
+  Tabs, Tab, IconButton, CircularProgress, Snackbar, Alert
 } from '@mui/material';
 import { SnomedAutocomplete } from '../components/SnomedAutocomplete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -37,6 +37,17 @@ const ClinicalWorkspace = () => {
   const [newEvolText, setNewEvolText] = useState('');
   const [newEvolVitals, setNewEvolVitals] = useState({ peso_kg: '', talla_cm: '', perimetro_cefalico_cm: '', tension_arterial: '' });
   const [currentTab, setCurrentTab] = useState(0);
+  const [openConfirmIps, setOpenConfirmIps] = useState(false);
+
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+
+  const showSnackbar = (msg: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbarMessage(msg);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+  };
 
   const calculateAge = (dob: string) => {
     if (!dob) return '';
@@ -135,13 +146,13 @@ const ClinicalWorkspace = () => {
     },
     onSuccess: (res) => {
       if (res.data?.status === 'success') {
-        alert('IPS enviado exitosamente al bus de interoperabilidad.');
+        showSnackbar('¡Excelente! El Resumen de Paciente (IPS) se compartió con éxito con la Red Nacional de Salud.', 'success');
       } else {
-        alert('Error al enviar IPS: ' + (res.data?.message || 'Revisa los logs.'));
+        showSnackbar('Tuvimos un inconveniente al compartir el resumen: ' + (res.data?.message || 'Revisa los logs.'), 'error');
       }
     },
     onError: (err: any) => {
-      alert('Error de red al enviar IPS: ' + err.message);
+      showSnackbar('Hubo un problema de conexión al compartir el resumen. Por favor, intenta de nuevo. (' + err.message + ')', 'error');
     }
   });
 
@@ -222,11 +233,7 @@ const ClinicalWorkspace = () => {
                 color="secondary" 
                 size="small" 
                 fullWidth 
-                onClick={() => {
-                  if (window.confirm('¿Desea enviar el Resumen de Paciente (IPS) al nodo nacional?')) {
-                    sendIpsMutation.mutate();
-                  }
-                }}
+                onClick={() => setOpenConfirmIps(true)}
                 disabled={sendIpsMutation.isPending}
               >
                 {sendIpsMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Enviar IPS (ITI-65)'}
@@ -552,6 +559,48 @@ const ClinicalWorkspace = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Confirm IPS Dialog */}
+      <Dialog open={openConfirmIps} onClose={() => setOpenConfirmIps(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+          Compartir Resumen de Paciente (IPS)
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            ¿Estás seguro de que deseas enviar el Resumen de Paciente (IPS) a la Red Nacional de Salud?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Esta acción consolidará los problemas activos, alergias, medicación y vacunas para ser compartidos a través de la red interoperable.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpenConfirmIps(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={() => {
+              setOpenConfirmIps(false);
+              sendIpsMutation.mutate();
+            }} 
+            variant="contained" 
+            color="primary"
+            disableElevation
+          >
+            Sí, compartir IPS
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%', boxShadow: 3 }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

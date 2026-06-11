@@ -10,6 +10,7 @@ class PatientBase(BaseModel):
     fecha_nacimiento: date
     sexo: str
     telefono: Optional[str] = None
+    cobertura: Optional[str] = None
 
 class PatientCreate(PatientBase):
     pass
@@ -22,6 +23,7 @@ class PatientUpdate(PatientBase):
     fecha_nacimiento: Optional[date] = None
     sexo: Optional[str] = None
     telefono: Optional[str] = None
+    cobertura: Optional[str] = None
 
 class PatientResponse(PatientBase):
     id: int

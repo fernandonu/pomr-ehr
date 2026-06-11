@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Paper, List, ListItem, ListItemButton, ListItemText,
-  CircularProgress, Alert, Divider, Chip, Grid
+  CircularProgress, Alert, Divider, Chip, Grid, IconButton, Tooltip
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 
@@ -12,9 +13,10 @@ interface ExternalHistoryTabProps {
 
 export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientId }) => {
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [cachedDates, setCachedDates] = useState<Record<string, string>>({});
 
   // Fetch domains (ITI-67)
-  const { data: domainsData, isLoading: isLoadingDomains, isError: isErrorDomains, error: domainsError } = useQuery({
+  const { data: domainsData, isLoading: isLoadingDomains, isError: isErrorDomains, error: domainsError, refetch: refetchDomains, isFetching: isFetchingDomains } = useQuery({
     queryKey: ['ips-domains', patientId],
     queryFn: async () => (await api.get(`patients/${patientId}/ips-domains`)).data,
     enabled: !!patientId,
@@ -26,8 +28,18 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
     queryKey: ['ips-document', patientId, selectedUrl],
     queryFn: async () => (await api.get(`patients/${patientId}/ips-document?url=${encodeURIComponent(selectedUrl!)}`)).data,
     enabled: !!selectedUrl,
+    enabled: !!selectedUrl,
     retry: 0 // No reintentar si el nodo está caído
   });
+
+  useEffect(() => {
+    if (docData && selectedUrl) {
+      const compDate = docData.entry?.find((e: any) => e.resource?.resourceType === 'Composition')?.resource?.date;
+      if (compDate && !cachedDates[selectedUrl]) {
+        setCachedDates(prev => ({ ...prev, [selectedUrl]: new Date(compDate).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) }));
+      }
+    }
+  }, [docData, selectedUrl, cachedDates]);
 
   const getDomainName = (url: string) => {
     try {
@@ -51,7 +63,15 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
     if (isLoadingDomains) return <Box p={3} textAlign="center"><CircularProgress /></Box>;
     if (isErrorDomains) return <Box p={3}><Alert severity="error">Error al buscar dominios: {(domainsError as Error).message}</Alert></Box>;
     
-    const entries = domainsData?.entry || [];
+    let entries = domainsData?.entry || [];
+    entries = [...entries].sort((a, b) => {
+      const urlA = a?.resource?.content?.[0]?.attachment?.url || '';
+      const urlB = b?.resource?.content?.[0]?.attachment?.url || '';
+      const idA = parseInt(getIdFromUrl(urlA) || '0', 10);
+      const idB = parseInt(getIdFromUrl(urlB) || '0', 10);
+      return idB - idA;
+    });
+    
     if (entries.length === 0) {
       return <Box p={3}><Alert severity="info">El paciente no posee registros en otros dominios.</Alert></Box>;
     }
@@ -64,6 +84,11 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
           const domainName = getDomainName(url);
           const bundleId = getIdFromUrl(url);
           const isSelected = selectedUrl === url;
+          const docDateRaw = entry?.resource?.date || entry?.resource?.content?.[0]?.attachment?.creation || entry?.resource?.timestamp || entry?.resource?.meta?.lastUpdated || entry?.resource?.indexed || entry?.resource?.created || domainsData?.timestamp;
+          let docDate = docDateRaw ? new Date(docDateRaw).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : null;
+          if (cachedDates[url]) {
+            docDate = cachedDates[url];
+          }
 
           return (
             <ListItem key={index} disablePadding>
@@ -80,7 +105,18 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
               >
                 <ListItemText 
                   primary={domainName} 
-                  secondary={`Resumen de Paciente (IPS ID:${bundleId})`}
+                  secondary={
+                    <React.Fragment>
+                      <Typography variant="body2" component="div" sx={{ mb: docDate ? 0.5 : 0, mt: 0.5 }}>
+                        IPS ID: {bundleId}
+                      </Typography>
+                      {docDate && (
+                        <Typography variant="caption" color="text.secondary" component="div">
+                          Generado: {docDate}
+                        </Typography>
+                      )}
+                    </React.Fragment>
+                  }
                   primaryTypographyProps={{ fontWeight: isSelected ? 'bold' : 'medium' }}
                 />
               </ListItemButton>
@@ -131,6 +167,7 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
       <Box p={3}>
         <Typography variant="h5" fontWeight="bold" mb={3} color="primary.main">
           Resumen Clínico ({getDomainName(selectedUrl)}) ID: {getIdFromUrl(selectedUrl)}
+          {cachedDates[selectedUrl] && <Typography component="span" variant="h6" color="text.secondary" ml={1}>| Generado: {cachedDates[selectedUrl]}</Typography>}
         </Typography>
 
         <Grid container spacing={3}>
@@ -159,14 +196,16 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
               <Divider sx={{ mb: 2 }} />
               {problems.length === 0 ? <Typography variant="body2" color="text.secondary">No registra</Typography> : (
                 <List dense disablePadding>
-                  {problems.map((p, i) => (
-                    <ListItem key={i} disableGutters>
-                      <ListItemText 
-                        primary={getCodeText(p.code)} 
-                        secondary={`Estado: ${p.clinicalStatus?.coding?.[0]?.code || 'Activo'} | Fecha: ${p.recordedDate ? new Date(p.recordedDate).toLocaleDateString() : 'Desconocida'}`} 
-                      />
-                    </ListItem>
-                  ))}
+                  {problems.map((p, i) => {
+                    return (
+                      <ListItem key={i} disableGutters>
+                        <ListItemText 
+                          primary={getCodeText(p.code)} 
+                          secondary={`Estado: ${p.clinicalStatus?.coding?.[0]?.code || 'Activo'}`} 
+                        />
+                      </ListItem>
+                    );
+                  })}
                 </List>
               )}
             </Paper>
@@ -220,7 +259,14 @@ export const ExternalHistoryTab: React.FC<ExternalHistoryTabProps> = ({ patientI
   return (
     <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', minHeight: 600, overflow: 'hidden', border: 1, borderColor: 'divider', borderRadius: 1 }}>
       <Box sx={{ width: 320, minWidth: 320, borderRight: 1, borderColor: 'divider', bgcolor: '#f8fafc', p: 2, overflowY: 'auto', flexShrink: 0 }}>
-        <Typography variant="h6" mb={2} fontWeight="bold" color="text.secondary">Nodos Federados</Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6" fontWeight="bold" color="text.secondary">Nodos Federados con IPS</Typography>
+          <Tooltip title="Actualizar Registros (ITI-67)">
+            <IconButton size="small" onClick={() => refetchDomains()} disabled={isFetchingDomains}>
+              {isFetchingDomains ? <CircularProgress size={20} /> : <RefreshIcon />}
+            </IconButton>
+          </Tooltip>
+        </Box>
         {renderLeftPanel()}
       </Box>
       <Box sx={{ flex: 1, overflowY: 'auto', bgcolor: 'background.paper', p: 1 }}>

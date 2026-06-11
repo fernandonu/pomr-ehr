@@ -173,12 +173,14 @@ def build_ips_transaction_bundle(patient, user, records):
             "status": "current",
             "type": {"coding": [{"system": "http://loinc.org", "code": "60591-5", "display": "Patient Summary Document"}]},
             "subject": {"reference": f"urn:uuid:{patient_id}"},
+            "date": timestamp,
             "author": [{"reference": f"urn:uuid:{practitioner_id}"}],
             "custodian": {"identifier": {"system": "https://federador.msal.gob.ar/uri", "value": settings.CODIGO_REFES}},
             "content": [{
                 "attachment": {
                     "contentType": "application/fhir+json",
-                    "url": f"urn:uuid:{document_bundle_id}"
+                    "url": f"urn:uuid:{document_bundle_id}",
+                    "creation": timestamp
                 }
             }]
         },

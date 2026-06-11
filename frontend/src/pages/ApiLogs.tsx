@@ -30,25 +30,26 @@ const ApiLogs = () => {
   const { data: logs, isLoading } = useQuery({
     queryKey: ['api-logs'],
     queryFn: async () => {
-      const res = await api.get<ApiLog[]>('/api-logs/');
+      const res = await api.get<ApiLog[]>('/api-logs/?limit=1000');
       return res.data;
     }
   });
 
   const filteredLogs = React.useMemo(() => {
     if (!logs) return [];
-    if (tabIndex === 0) return logs.filter(l => l.endpoint.includes('(ITI-68)'));
-    if (tabIndex === 1) return logs.filter(l => l.endpoint.includes('(ITI-67)'));
-    if (tabIndex === 2) return logs.filter(l => l.endpoint.includes('(ITI-78)'));
-    if (tabIndex === 3) return logs.filter(l => l.endpoint.includes('(ITI-104)'));
-    if (tabIndex === 4) return logs.filter(l => l.endpoint.includes('(ITI-65)'));
-    if (tabIndex === 5) return logs.filter(l => 
-      !l.endpoint.includes('(ITI-68)') && 
-      !l.endpoint.includes('(ITI-67)') && 
-      !l.endpoint.includes('(ITI-78)') && 
-      !l.endpoint.includes('(ITI-104)') && 
-      !l.endpoint.includes('(ITI-65)')
-    );
+    if (tabIndex === 0) return logs.filter(l => (l.endpoint || '').includes('(ITI-68)'));
+    if (tabIndex === 1) return logs.filter(l => (l.endpoint || '').includes('(ITI-67)'));
+    if (tabIndex === 2) return logs.filter(l => (l.endpoint || '').includes('(ITI-78)'));
+    if (tabIndex === 3) return logs.filter(l => (l.endpoint || '').includes('(ITI-104)'));
+    if (tabIndex === 4) return logs.filter(l => (l.endpoint || '').includes('(ITI-65)'));
+    if (tabIndex === 5) return logs.filter(l => {
+      const ep = l.endpoint || '';
+      return !ep.includes('(ITI-68)') && 
+             !ep.includes('(ITI-67)') && 
+             !ep.includes('(ITI-78)') && 
+             !ep.includes('(ITI-104)') && 
+             !ep.includes('(ITI-65)');
+    });
     return logs;
   }, [logs, tabIndex]);
 
