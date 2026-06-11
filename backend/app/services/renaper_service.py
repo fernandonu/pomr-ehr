@@ -18,6 +18,7 @@ async def validate_renaper_cobertura(documento: str, sexo: str, db: AsyncSession
     async with httpx.AsyncClient() as client:
         try:
             login_res = await client.post(login_url, json=login_payload, timeout=10.0)
+            login_res.encoding = 'utf-8'
             await log_api_call(db, None, "(Login Renaper) " + login_url, "POST", login_payload, login_res.json() if login_res.text else None, login_res.status_code)
             
             if login_res.status_code != 200:
@@ -47,6 +48,7 @@ async def validate_renaper_cobertura(documento: str, sexo: str, db: AsyncSession
         renaper_data = None
         try:
             renaper_res = await client.get(renaper_url, headers=renaper_headers, timeout=15.0)
+            renaper_res.encoding = 'utf-8'
             
             # Read response
             try:
@@ -70,6 +72,7 @@ async def validate_renaper_cobertura(documento: str, sexo: str, db: AsyncSession
         cobertura_data = None
         try:
             cobertura_res = await client.get(cobertura_url, headers=cobertura_headers, timeout=15.0)
+            cobertura_res.encoding = 'utf-8'
             try:
                 cobertura_data = cobertura_res.json()
             except:
@@ -84,13 +87,35 @@ async def validate_renaper_cobertura(documento: str, sexo: str, db: AsyncSession
         "nombre": "",
         "apellido": "",
         "fecha_nacimiento": "",
-        "cobertura": ""
+        "cobertura": "",
+        "calle": "",
+        "numero": "",
+        "piso": "",
+        "departamento": "",
+        "cpostal": "",
+        "barrio": "",
+        "monoblock": "",
+        "ciudad": "",
+        "municipio": "",
+        "provincia": "",
+        "pais": ""
     }
 
     if isinstance(renaper_data, dict):
         result["nombre"] = renaper_data.get("nombres", "")
         result["apellido"] = renaper_data.get("apellido", "")
         result["fecha_nacimiento"] = renaper_data.get("fechaNacimiento", "")
+        result["calle"] = renaper_data.get("calle", "")
+        result["numero"] = renaper_data.get("numero", "")
+        result["piso"] = renaper_data.get("piso", "")
+        result["departamento"] = renaper_data.get("departamento", "")
+        result["cpostal"] = renaper_data.get("cpostal", "")
+        result["barrio"] = renaper_data.get("barrio", "")
+        result["monoblock"] = renaper_data.get("monoblock", "")
+        result["ciudad"] = renaper_data.get("ciudad", "")
+        result["municipio"] = renaper_data.get("municipio", "")
+        result["provincia"] = renaper_data.get("provincia", "")
+        result["pais"] = renaper_data.get("pais", "")
 
     if cobertura_data:
         import json

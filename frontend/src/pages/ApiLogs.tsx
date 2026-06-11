@@ -65,7 +65,7 @@ const ApiLogs = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <AppBar position="static" elevation={0} color="primary">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
@@ -75,12 +75,12 @@ const ApiLogs = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth={false} sx={{ mt: 4, mb: 4, flexGrow: 1, px: { xs: 2, sm: 4, md: 6 } }}>
-        <Typography variant="h4" fontWeight="bold" color="text.primary" mb={3}>
+      <Container maxWidth={false} sx={{ mt: 4, mb: 4, flexGrow: 1, px: { xs: 2, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Typography variant="h4" fontWeight="bold" color="text.primary" mb={3} flexShrink={0}>
           Historial de Peticiones
         </Typography>
 
-        <Paper elevation={1} sx={{ width: '100%', overflow: 'hidden' }}>
+        <Paper elevation={1} sx={{ width: '100%', display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
           <Tabs value={tabIndex} onChange={(e, v) => { setTabIndex(v); setPage(0); }} sx={{ borderBottom: 1, borderColor: 'divider' }} variant="scrollable" scrollButtons="auto">
             <Tab label="Consultas IPS (ITI-68)" />
             <Tab label="Búsqueda IPS (ITI-67)" />
@@ -89,8 +89,8 @@ const ApiLogs = () => {
             <Tab label="Envío de Doc. (ITI-65)" />
             <Tab label="Otras Llamadas" />
           </Tabs>
-          <TableContainer>
-            <Table sx={{ minWidth: 650 }} aria-label="api logs table">
+          <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
+            <Table stickyHeader sx={{ minWidth: 650 }} aria-label="api logs table">
             <TableHead sx={{ backgroundColor: '#f9fafb' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>

@@ -11,7 +11,19 @@ class PatientBase(BaseModel):
     sexo: str
     telefono: Optional[str] = None
     cobertura: Optional[str] = None
-
+    calle: Optional[str] = None
+    numero: Optional[str] = None
+    piso: Optional[str] = None
+    departamento: Optional[str] = None
+    cpostal: Optional[str] = None
+    barrio: Optional[str] = None
+    monoblock: Optional[str] = None
+    ciudad: Optional[str] = None
+    municipio: Optional[str] = None
+    provincia: Optional[str] = None
+    pais: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
 class PatientCreate(PatientBase):
     pass
 
@@ -24,7 +36,19 @@ class PatientUpdate(PatientBase):
     sexo: Optional[str] = None
     telefono: Optional[str] = None
     cobertura: Optional[str] = None
-
+    calle: Optional[str] = None
+    numero: Optional[str] = None
+    piso: Optional[str] = None
+    departamento: Optional[str] = None
+    cpostal: Optional[str] = None
+    barrio: Optional[str] = None
+    monoblock: Optional[str] = None
+    ciudad: Optional[str] = None
+    municipio: Optional[str] = None
+    provincia: Optional[str] = None
+    pais: Optional[str] = None
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
 class PatientResponse(PatientBase):
     id: int
     created_at: datetime

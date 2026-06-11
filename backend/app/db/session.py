@@ -3,8 +3,7 @@ from app.core.config import settings
 
 engine = create_async_engine(
     settings.SQLALCHEMY_DATABASE_URI, 
-    echo=False,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.SQLALCHEMY_DATABASE_URI else {}
+    echo=False
 )
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
