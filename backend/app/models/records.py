@@ -37,14 +37,14 @@ class Procedure(Base):
     __tablename__ = "procedure"
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("patient.id"), nullable=False)
-    snomed_concept_id = Column(String, ForeignKey("snomed_concepts.conceptid"), nullable=False)
+    snomed_concept_id = Column(String, ForeignKey("snomed_concepts_procedure.conceptid"), nullable=False)
     descripcion = Column(String, nullable=True)
     fecha = Column(Date, nullable=False)
     observaciones = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     patient = relationship("Patient", back_populates="procedures")
-    snomed_concept = relationship("SnomedConcept")
+    snomed_concept = relationship("SnomedConceptProcedure")
 
 class Medication(Base):
     __tablename__ = "medication"
@@ -56,6 +56,7 @@ class Medication(Base):
     dosis = Column(String, nullable=True)
     frecuencia = Column(String, nullable=True)
     via = Column(String, nullable=True)
+    via_snomed_id = Column(String, ForeignKey("snomed_concepts_medication_route_administration.conceptid"), nullable=True)
     fecha_inicio = Column(Date, nullable=False)
     fecha_fin = Column(Date, nullable=True)
     estado = Column(String, nullable=False)
@@ -64,12 +65,13 @@ class Medication(Base):
     patient = relationship("Patient", back_populates="medications")
     problem = relationship("Problem")
     snomed_concept = relationship("SnomedConceptMedication")
+    via_snomed_concept = relationship("SnomedConceptMedicationRoute", foreign_keys=[via_snomed_id])
 
 class LabResult(Base):
     __tablename__ = "lab_result"
     id = Column(Integer, primary_key=True, index=True)
     paciente_id = Column(Integer, ForeignKey("patient.id"), nullable=False)
-    snomed_concept_id = Column(String, ForeignKey("snomed_concepts.conceptid"), nullable=False)
+    snomed_concept_id = Column(String, ForeignKey("snomed_concepts_laboratory.conceptid"), nullable=False)
     descripcion = Column(String, nullable=True)
     fecha = Column(Date, nullable=False)
     resultado = Column(String, nullable=False)
@@ -78,4 +80,4 @@ class LabResult(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     patient = relationship("Patient", back_populates="lab_results")
-    snomed_concept = relationship("SnomedConcept")
+    snomed_concept = relationship("SnomedConceptLaboratory")

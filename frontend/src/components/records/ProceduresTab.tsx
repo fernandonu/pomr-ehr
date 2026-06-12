@@ -47,6 +47,7 @@ export const ProceduresTab = ({ patientId, procedures = [] }: { patientId: strin
               selectedConceptId={formData.snomed_concept_id}
               selectedTerm={formData.descripcion}
               onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
+              searchEndpoint="/snomed/search-procedures"
            />
            <TextField margin="dense" label="Fecha" type="date" fullWidth value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} InputLabelProps={{ shrink: true }} />
            <TextField margin="dense" label="Observaciones" fullWidth value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} />

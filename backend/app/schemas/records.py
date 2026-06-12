@@ -61,6 +61,7 @@ class MedicationBase(BaseModel):
     dosis: Optional[str] = None
     frecuencia: Optional[str] = None
     via: Optional[str] = None
+    via_snomed_id: Optional[str] = None
     fecha_inicio: date
     fecha_fin: Optional[date] = None
     estado: str

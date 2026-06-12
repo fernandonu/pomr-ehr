@@ -51,6 +51,15 @@ const theme = createTheme({
         }
       },
     },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#00C4B4',
+          color: '#ffffff',
+          fontWeight: 600,
+        }
+      }
+    },
   }
 });
 

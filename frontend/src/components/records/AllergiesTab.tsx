@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Box, Typography, Button, List, ListItem, ListItemText, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem } from '@mui/material';
 import { SnomedAutocomplete } from '../SnomedAutocomplete';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
@@ -52,7 +52,24 @@ export const AllergiesTab = ({ patientId, allergies = [] }: { patientId: string,
               onSelect={(conceptId, term) => setFormData({...formData, snomed_concept_id: conceptId, descripcion: term})}
               searchEndpoint="/snomed/search-allergies"
            />
-           <TextField margin="dense" label="Severidad" fullWidth value={formData.severidad} onChange={e => setFormData({...formData, severidad: e.target.value})} sx={{ mb: 2 }} />
+           <TextField 
+              select
+              margin="dense" 
+              label="Severidad" 
+              fullWidth 
+              value={formData.severidad} 
+              onChange={e => setFormData({...formData, severidad: e.target.value})} 
+              sx={{ mb: 2 }}
+           >
+              <MenuItem value="Severidad (272141005)">Severidad (272141005)</MenuItem>
+              <MenuItem value="Leve (255604002)">Leve (255604002)</MenuItem>
+              <MenuItem value="Leve a moderado (371923003)">Leve a moderado (371923003)</MenuItem>
+              <MenuItem value="Moderado (6736007)">Moderado (6736007)</MenuItem>
+              <MenuItem value="Moderado a severo (371924009)">Moderado a severo (371924009)</MenuItem>
+              <MenuItem value="Severo (24484000)">Severo (24484000)</MenuItem>
+              <MenuItem value="Potencialmente fatal (442452003)">Potencialmente fatal (442452003)</MenuItem>
+              <MenuItem value="Fatal (399166001)">Fatal (399166001)</MenuItem>
+           </TextField>
            <SnomedAutocomplete 
               label="Buscar Reacción (SNOMED CT)"
               selectedConceptId={formData.reaccion_snomed_id}

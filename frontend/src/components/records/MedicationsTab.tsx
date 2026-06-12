@@ -7,7 +7,7 @@ import { api } from '../../services/api';
 export const MedicationsTab = ({ patientId, medications = [], problems = [] }: { patientId: string, medications?: any[], problems?: any[] }) => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ snomed_concept_id: '', descripcion: '', dosis: '', frecuencia: '', via: '', fecha_inicio: new Date().toISOString().split('T')[0], estado: 'activo', problema_id: '' });
+  const [formData, setFormData] = useState({ snomed_concept_id: '', descripcion: '', dosis: '', frecuencia: '', via: '', via_snomed_id: '', fecha_inicio: new Date().toISOString().split('T')[0], estado: 'activo', problema_id: '' });
   const activeProblems = problems.filter(p => p.estado === 'activo');
 
   const mutation = useMutation({
@@ -15,7 +15,7 @@ export const MedicationsTab = ({ patientId, medications = [], problems = [] }: {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['records', patientId] });
       setOpen(false);
-      setFormData({ snomed_concept_id: '', descripcion: '', dosis: '', frecuencia: '', via: '', fecha_inicio: new Date().toISOString().split('T')[0], estado: 'activo', problema_id: '' });
+      setFormData({ snomed_concept_id: '', descripcion: '', dosis: '', frecuencia: '', via: '', via_snomed_id: '', fecha_inicio: new Date().toISOString().split('T')[0], estado: 'activo', problema_id: '' });
     }
   });
 
@@ -71,7 +71,13 @@ export const MedicationsTab = ({ patientId, medications = [], problems = [] }: {
            </FormControl>
            <TextField margin="dense" label="Dosis" fullWidth value={formData.dosis} onChange={e => setFormData({...formData, dosis: e.target.value})} />
            <TextField margin="dense" label="Frecuencia" fullWidth value={formData.frecuencia} onChange={e => setFormData({...formData, frecuencia: e.target.value})} />
-           <TextField margin="dense" label="Vía de administración" fullWidth value={formData.via} onChange={e => setFormData({...formData, via: e.target.value})} />
+           <SnomedAutocomplete 
+              label="Buscar Vía de Administración (SNOMED CT)"
+              selectedConceptId={formData.via_snomed_id}
+              selectedTerm={formData.via}
+              onSelect={(conceptId, term) => setFormData({...formData, via_snomed_id: conceptId, via: term})}
+              searchEndpoint="/snomed/search-medication-routes"
+           />
            <TextField margin="dense" label="Fecha de Inicio" type="date" fullWidth value={formData.fecha_inicio} onChange={e => setFormData({...formData, fecha_inicio: e.target.value})} InputLabelProps={{ shrink: true }} />
         </DialogContent>
         <DialogActions>
