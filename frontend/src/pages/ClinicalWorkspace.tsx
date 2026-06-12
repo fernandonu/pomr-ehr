@@ -204,9 +204,15 @@ const ClinicalWorkspace = () => {
     <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
       <AppBar position="static" elevation={0} color="primary">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            Historia Clínica Electrónica
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '12px' }}>
+              <path d="M 84.6 25 A 40 40 0 1 0 84.6 75" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" />
+              <path d="M 50 22 L 50 50 L 58 50 L 64 32 L 72 68 L 78 50 L 95 50" stroke="#ffffff" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" fill="none" />
+            </svg>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px' }}>
+              Kairos EHR
+            </Typography>
+          </Box>
           <Button color="inherit" onClick={() => navigate('/')}>Listado de pacientes</Button>
         </Toolbar>
       </AppBar>

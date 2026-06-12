@@ -35,6 +35,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import 'dayjs/locale/es';
+import 'leaflet/dist/leaflet.css';
 
 const DraggableMarker = ({ position, setPosition }: { position: [number, number], setPosition: (pos: [number, number]) => void }) => {
   const markerRef = React.useRef<L.Marker>(null);
@@ -68,11 +69,15 @@ const DraggableMarker = ({ position, setPosition }: { position: [number, number]
 const MapResizer = () => {
   const map = useMap();
   React.useEffect(() => {
-    // Invalidate size shortly after mounting to fix rendering inside MUI Dialogs
-    const timeout = setTimeout(() => {
+    // Invalidate size multiple times during and after MUI Dialog transition
+    let count = 0;
+    const intervalId = setInterval(() => {
       map.invalidateSize();
-    }, 150);
-    return () => clearTimeout(timeout);
+      count++;
+      if (count > 8) clearInterval(intervalId); // 8 * 50ms = 400ms
+    }, 50);
+
+    return () => clearInterval(intervalId);
   }, [map]);
   return null;
 };
@@ -110,7 +115,18 @@ const PatientList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewMapPatient, setViewMapPatient] = useState<Patient | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (viewMapPatient || isDialogOpen) {
+      const timer = setTimeout(() => setMapReady(true), 350);
+      return () => clearTimeout(timer);
+    } else {
+      setMapReady(false);
+    }
+  }, [viewMapPatient, isDialogOpen]);
+
   const [newPatient, setNewPatient] = useState({
     nombre: '',
     apellido: '',
@@ -280,9 +296,9 @@ const PatientList = () => {
           cpostal: res.data.cpostal || prev.cpostal,
           barrio: res.data.barrio || prev.barrio,
           monoblock: res.data.monoblock || prev.monoblock,
-          ciudad: res.data.ciudad || prev.ciudad,
-          municipio: res.data.municipio || prev.municipio,
-          provincia: res.data.provincia || prev.provincia,
+          ciudad: res.data.ciudad?.replace(/_/g, ' ') || prev.ciudad,
+          municipio: res.data.municipio?.replace(/_/g, ' ') || prev.municipio,
+          provincia: res.data.provincia?.replace(/_/g, ' ') || prev.provincia,
           pais: res.data.pais || prev.pais
         }));
         setSnackbar({ open: true, message: "Datos validados correctamente desde el BUS.", severity: 'success' });
@@ -373,9 +389,15 @@ const PatientList = () => {
     <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <AppBar position="static" elevation={0} color="primary">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            Historia Clínica Electrónica
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '12px' }}>
+              <path d="M 84.6 25 A 40 40 0 1 0 84.6 75" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" />
+              <path d="M 50 22 L 50 50 L 58 50 L 64 32 L 72 68 L 78 50 L 95 50" stroke="#ffffff" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" fill="none" />
+            </svg>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px' }}>
+              Kairos EHR
+            </Typography>
+          </Box>
           {role === 'superadmin' && (
             <Box sx={{ mr: 2 }}>
               <Button color="inherit" onClick={() => navigate('/api-logs')}>
@@ -556,7 +578,12 @@ const PatientList = () => {
         </Paper>
       </Container>
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} maxWidth="xl" fullWidth>
+      <Dialog 
+        open={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)} 
+        maxWidth="xl" 
+        fullWidth
+      >
         <DialogTitle>{editingPatientId ? 'Editar Paciente' : 'Nuevo Paciente'}</DialogTitle>
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', gap: 3 }}>
@@ -721,22 +748,27 @@ const PatientList = () => {
           </Box>
           {newPatient.latitud !== undefined && newPatient.longitud !== undefined && (
             <Box mt={3} height={300} width="100%" sx={{ border: '1px solid #ccc', borderRadius: 1, overflow: 'hidden' }}>
-              <MapContainer 
-                center={[newPatient.latitud, newPatient.longitud]} 
-                zoom={15} 
-                scrollWheelZoom={false} 
-                style={{ height: '100%', width: '100%' }}
-              >
-                <MapResizer />
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <DraggableMarker 
-                  position={[newPatient.latitud, newPatient.longitud]} 
-                  setPosition={(pos) => setNewPatient({ ...newPatient, latitud: pos[0], longitud: pos[1] })} 
-                />
-              </MapContainer>
+              {mapReady ? (
+                <MapContainer 
+                  center={[Number(newPatient.latitud), Number(newPatient.longitud)]} 
+                  zoom={15} 
+                  scrollWheelZoom={false} 
+                  style={{ height: '100%', width: '100%', minHeight: '300px' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <DraggableMarker 
+                    position={[Number(newPatient.latitud), Number(newPatient.longitud)]} 
+                    setPosition={(pos) => setNewPatient({ ...newPatient, latitud: pos[0], longitud: pos[1] })} 
+                  />
+                </MapContainer>
+              ) : (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <Typography>Cargando mapa...</Typography>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>
@@ -762,33 +794,49 @@ const PatientList = () => {
         </Alert>
       </Snackbar>
 
-      <Dialog open={!!viewMapPatient} onClose={() => setViewMapPatient(null)} maxWidth="md" fullWidth>
+      <Dialog 
+        open={!!viewMapPatient} 
+        onClose={() => {
+          setViewMapPatient(null);
+          setMapReady(false);
+        }} 
+        maxWidth="md" 
+        fullWidth
+      >
         <DialogTitle>Ubicación de {viewMapPatient?.nombre} {viewMapPatient?.apellido}</DialogTitle>
         <DialogContent dividers>
           {viewMapPatient?.latitud !== undefined && viewMapPatient?.longitud !== undefined && (
             <Box height={400} width="100%">
-              <MapContainer 
-                center={[viewMapPatient.latitud, viewMapPatient.longitud]} 
-                zoom={15} 
-                style={{ height: '100%', width: '100%' }}
-              >
-                <MapResizer />
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={[viewMapPatient.latitud, viewMapPatient.longitud]}>
-                  <Popup>
-                    {viewMapPatient.calle} {viewMapPatient.numero}<br/>
-                    {viewMapPatient.ciudad}, {viewMapPatient.provincia}
-                  </Popup>
-                </Marker>
-              </MapContainer>
+              {mapReady ? (
+                <MapContainer 
+                  center={[Number(viewMapPatient.latitud), Number(viewMapPatient.longitud)]} 
+                  zoom={15} 
+                  style={{ height: '100%', width: '100%', minHeight: '300px' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[Number(viewMapPatient.latitud), Number(viewMapPatient.longitud)]}>
+                    <Popup>
+                      {viewMapPatient.calle} {viewMapPatient.numero}<br/>
+                      {viewMapPatient.ciudad}, {viewMapPatient.provincia}
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              ) : (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                  <Typography>Cargando mapa...</Typography>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewMapPatient(null)}>Cerrar</Button>
+          <Button onClick={() => {
+            setViewMapPatient(null);
+            setMapReady(false);
+          }}>Cerrar</Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -14,7 +14,7 @@ const queryClient = new QueryClient();
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#2b5ea8',
+      main: '#00C4B4', // Changed from '#2b5ea8' to match the login theme
     },
     secondary: {
       main: '#e35f66',
