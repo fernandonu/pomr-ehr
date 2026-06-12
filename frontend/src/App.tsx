@@ -15,6 +15,7 @@ const theme = createTheme({
   palette: {
     primary: {
       main: '#00C4B4', // Changed from '#2b5ea8' to match the login theme
+      contrastText: '#ffffff',
     },
     secondary: {
       main: '#e35f66',
@@ -25,10 +26,32 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: 'Inter, Roboto, sans-serif',
+    button: {
+      textTransform: 'none',
+      fontWeight: 600,
+      letterSpacing: '0.3px',
+    }
   },
   shape: {
     borderRadius: 8,
   },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          padding: '6px 16px',
+        },
+        textInherit: {
+          color: 'rgba(255, 255, 255, 0.9)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            color: '#ffffff',
+          }
+        }
+      },
+    },
+  }
 });
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {

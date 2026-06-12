@@ -584,7 +584,9 @@ const PatientList = () => {
         maxWidth="xl" 
         fullWidth
       >
-        <DialogTitle>{editingPatientId ? 'Editar Paciente' : 'Nuevo Paciente'}</DialogTitle>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 'bold' }}>
+          {editingPatientId ? 'Editar Paciente' : 'Nuevo Paciente'}
+        </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', gap: 3 }}>
             {/* Columna Izquierda: Datos Personales */}
@@ -803,7 +805,9 @@ const PatientList = () => {
         maxWidth="md" 
         fullWidth
       >
-        <DialogTitle>Ubicación de {viewMapPatient?.nombre} {viewMapPatient?.apellido}</DialogTitle>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 'bold' }}>
+          Ubicación de {viewMapPatient?.nombre} {viewMapPatient?.apellido}
+        </DialogTitle>
         <DialogContent dividers>
           {viewMapPatient?.latitud !== undefined && viewMapPatient?.longitud !== undefined && (
             <Box height={400} width="100%">

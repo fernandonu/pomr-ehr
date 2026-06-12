@@ -467,7 +467,7 @@ const ClinicalWorkspace = () => {
       {/* Add Problem Dialog */}
       <ErrorBoundary>
         <Dialog open={openAddProblem} onClose={() => setOpenAddProblem(false)} fullWidth maxWidth="md">
-          <DialogTitle>Añadir Problema Activo</DialogTitle>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 'bold' }}>Añadir Problema Activo</DialogTitle>
           <DialogContent>
           <SnomedAutocomplete
             label="Descripción del problema (Busca en SNOMED CT...)"
@@ -494,7 +494,7 @@ const ClinicalWorkspace = () => {
 
       {/* Add Evolution Dialog */}
       <Dialog open={openAddEvol} onClose={() => setOpenAddEvol(false)} fullWidth maxWidth="md">
-        <DialogTitle>Nueva Evolución Clínica</DialogTitle>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 'bold' }}>Nueva Evolución Clínica</DialogTitle>
         <DialogContent>
           <Box display="flex" gap={2} mb={2} mt={1}>
             <TextField label="Peso (kg)" type="number" size="small" value={newEvolVitals.peso_kg} onChange={(e) => setNewEvolVitals({...newEvolVitals, peso_kg: e.target.value})} />
@@ -527,7 +527,7 @@ const ClinicalWorkspace = () => {
 
       {/* Edit Evolution Dialog */}
       <Dialog open={openEditEvol} onClose={() => setOpenEditEvol(false)} fullWidth maxWidth="md">
-        <DialogTitle>Editar Evolución Clínica</DialogTitle>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 'bold' }}>Editar Evolución Clínica</DialogTitle>
         <DialogContent>
           <TextField 
             margin="dense"
@@ -568,7 +568,7 @@ const ClinicalWorkspace = () => {
 
       {/* Confirm IPS Dialog */}
       <Dialog open={openConfirmIps} onClose={() => setOpenConfirmIps(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 'bold' }}>
           Compartir Resumen de Paciente (IPS)
         </DialogTitle>
         <DialogContent>
