@@ -147,4 +147,9 @@ http://localhost:5173/
 Usuario: admin
 Contraseña: admin123 
 
-
+Acceso a la base de datos
+POSTGRES_SERVER: str = "localhost" # Use 'db' when running within docker network
+POSTGRES_USER: str = "pomr_user"
+POSTGRES_PASSWORD: str = "pomr_password"
+POSTGRES_DB: str = "pomr_db"
+POSTGRES_PORT: str = "5432"
